@@ -1,0 +1,217 @@
+// ============================================================
+// LearnQuiz - Nền tảng học tập & Quiz trực tuyến
+// Đồ án tốt nghiệp Full-stack JavaScript K312
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------- ENUMS ----------------
+
+enum Role {
+  student
+  instructor
+  admin
+}
+
+/// draft    : instructor đang soạn, chưa gửi duyệt
+/// pending  : đã gửi, chờ admin duyệt
+/// published: admin đã duyệt -> hiển thị public
+/// rejected : admin từ chối, instructor sửa rồi gửi lại
+enum CourseStatus {
+  draft
+  pending
+  published
+  rejected
+}
+
+enum CourseLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+// ---------------- MODELS ----------------
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(150)
+  password     String
+  avatar       String?   @db.VarChar(500)
+  role         Role      @default(student)
+  isActive     Boolean   @default(true) @map("is_active")
+  refreshToken String?   @map("refresh_token")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  coursesTaught Course[]         @relation("CourseInstructor")
+  enrollments   Enrollment[]
+  submissions   QuizSubmission[]
+
+  @@map("users")
+}
+
+model Category {
+  id      Int      @id @default(autoincrement())
+  name    String   @db.VarChar(100)
+  slug    String   @unique @db.VarChar(100)
+  courses Course[]
+
+  @@map("categories")
+}
+
+model Course {
+  id           Int          @id @default(autoincrement())
+  instructorId Int          @map("instructor_id")
+  categoryId   Int?         @map("category_id")
+  title        String       @db.VarChar(200)
+  description  String?
+  thumbnail    String?      @db.VarChar(500)
+  level        CourseLevel  @default(beginner)
+  status       CourseStatus @default(draft)
+  rejectReason String?      @map("reject_reason")
+  publishedAt  DateTime?    @map("published_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  instructor  User         @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  lessons     Lesson[]
+  enrollments Enrollment[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@map("courses")
+}
+
+model Lesson {
+  id        Int      @id @default(autoincrement())
+  courseId  Int      @map("course_id")
+  title     String   @db.VarChar(200)
+  content   String?
+  videoUrl  String?  @map("video_url") @db.VarChar(500)
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  course     Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quiz       Quiz?
+  progresses LessonProgress[]
+
+  // Thứ tự bài học là duy nhất trong 1 khóa -> chặn 2 bài cùng order
+  @@unique([courseId, order])
+  @@map("lessons")
+}
+
+model Quiz {
+  id          Int      @id @default(autoincrement())
+  lessonId    Int      @unique @map("lesson_id") // 1-1: mỗi bài học tối đa 1 quiz
+  title       String   @db.VarChar(200)
+  passScore   Int      @default(70) @map("pass_score") // % để được coi là đạt
+  maxAttempts Int?     @map("max_attempts") // null = làm lại không giới hạn
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  lesson      Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  submissions QuizSubmission[]
+
+  @@map("quizzes")
+}
+
+model Question {
+  id     Int    @id @default(autoincrement())
+  quizId Int    @map("quiz_id")
+  text   String
+  order  Int
+
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  choices Choice[]
+  answers Answer[]
+
+  @@unique([quizId, order])
+  @@map("questions")
+}
+
+model Choice {
+  id         Int     @id @default(autoincrement())
+  questionId Int     @map("question_id")
+  text       String
+  isCorrect  Boolean @default(false) @map("is_correct")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  Answer[]
+
+  @@map("choices")
+}
+
+model Enrollment {
+  id         Int      @id @default(autoincrement())
+  studentId  Int      @map("student_id")
+  courseId   Int      @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  student    User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course     Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progresses LessonProgress[]
+
+  // 1 học viên chỉ enroll 1 lần / 1 khóa
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id           Int       @id @default(autoincrement())
+  enrollmentId Int       @map("enrollment_id")
+  lessonId     Int       @map("lesson_id")
+  isCompleted  Boolean   @default(false) @map("is_completed")
+  completedAt  DateTime? @map("completed_at")
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@map("lesson_progress")
+}
+
+model QuizSubmission {
+  id             Int      @id @default(autoincrement())
+  studentId      Int      @map("student_id")
+  quizId         Int      @map("quiz_id")
+  score          Int // thang 0-100, do BE tự chấm
+  correctCount   Int      @map("correct_count")
+  totalQuestions Int      @map("total_questions")
+  attemptNo      Int      @map("attempt_no")
+  submittedAt    DateTime @default(now()) @map("submitted_at")
+
+  student User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers Answer[]
+
+  // Chặn double-submit cùng 1 lượt làm bài
+  @@unique([studentId, quizId, attemptNo])
+  @@map("quiz_submissions")
+}
+
+model Answer {
+  id            Int     @id @default(autoincrement())
+  submissionId  Int     @map("submission_id")
+  questionId    Int     @map("question_id")
+  choiceId      Int?    @map("choice_id") // null = bỏ trống câu này
+  isCorrect     Boolean @default(false) @map("is_correct")
+  aiExplanation String? @map("ai_explanation") // Gemini giải thích khi trả lời sai
+
+  submission QuizSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  choice     Choice?        @relation(fields: [choiceId], references: [id], onDelete: SetNull)
+
+  @@unique([submissionId, questionId])
+  @@map("answers")
+}

@@ -1,0 +1,60 @@
+# Chạy TRỌN BỘ hệ thống bằng Docker (giống môi trường production nhất có thể):
+#   docker compose -f docker-compose.full.yml up --build
+#
+# Khác với docker-compose.yml (chỉ dựng Postgres cho lúc lập trình),
+# file này build cả backend và frontend thành image rồi chạy cùng nhau.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: learnquiz_db_full
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: learnquiz_db
+    volumes:
+      - pgdata_full:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d learnquiz_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: learnquiz_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Trong mạng nội bộ của Docker, host của CSDL là tên service "db"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/learnquiz_db?schema=public
+      JWT_ACCESS_SECRET: doi_chuoi_nay_khi_chay_that
+      JWT_REFRESH_SECRET: doi_chuoi_khac_khi_chay_that
+      FE_URL: http://localhost:8080
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Áp migration trước khi khởi động API, nếu không API sẽ chạy trên CSDL rỗng
+    command: sh -c "npx prisma migrate deploy && node dist/index.js"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Vite nhúng biến này vào lúc build, không đọc lúc chạy
+        VITE_API_URL: http://localhost:3000/api/v1
+    container_name: learnquiz_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata_full:

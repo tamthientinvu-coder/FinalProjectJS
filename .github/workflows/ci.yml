@@ -1,0 +1,109 @@
+name: CI
+
+# Chạy mỗi lần đẩy code lên main và mỗi lần mở Pull Request.
+# Mục tiêu: KHÔNG để code hỏng lọt vào nhánh chính.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — kiểm tra kiểu, kiểm thử, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Cài đặt phụ thuộc
+        run: npm ci
+
+      - name: Sinh Prisma Client
+        run: npx prisma generate
+
+      - name: Kiểm tra lược đồ Prisma
+        run: npx prisma validate
+
+      - name: Kiểm tra kiểu TypeScript
+        run: npm run typecheck
+
+      - name: Chạy bộ kiểm thử
+        # Bộ test dùng Prisma giả lập trong bộ nhớ nên KHÔNG cần dựng cơ sở dữ liệu
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          JWT_ACCESS_SECRET: ci_access_secret
+          JWT_REFRESH_SECRET: ci_refresh_secret
+
+      - name: Biên dịch sang JavaScript
+        run: npm run build
+
+  frontend:
+    name: Frontend — kiểm tra kiểu và build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cài đặt phụ thuộc
+        run: npm ci
+
+      - name: Kiểm tra kiểu TypeScript
+        run: npm run typecheck
+
+      - name: Build production
+        run: npm run build
+        env:
+          VITE_API_URL: https://learnquiz-api.onrender.com/api/v1
+
+  security:
+    name: Bảo mật — rà soát lỗ hổng và rò rỉ bí mật
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Lấy toàn bộ lịch sử để kiểm tra được .env có từng bị commit hay không
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Bảo đảm .env chưa bao giờ bị commit
+        run: |
+          if git log --all --full-history --name-only --pretty=format: \
+             | grep -E '(^|/)\.env$' | head -n 1 | grep -q .; then
+            echo "::error::Phát hiện file .env trong lịch sử git — phải gỡ ngay và đổi toàn bộ secret"
+            exit 1
+          fi
+          echo "OK: .env chưa bao giờ được commit"
+
+      - name: npm audit (backend)
+        working-directory: backend
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: npm audit (frontend)
+        working-directory: frontend
+        run: npm audit --audit-level=high
+        continue-on-error: true
