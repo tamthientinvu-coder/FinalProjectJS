@@ -17,7 +17,7 @@ services:
     rootDir: backend
     # migrate deploy nằm ở BUILD: chạy một lần mỗi lần deploy,
     # thay vì chạy lại ở mỗi lần container khởi động lại.
-    buildCommand: npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build
+    buildCommand: npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build
     startCommand: node dist/index.js
     healthCheckPath: /health
     envVars:
