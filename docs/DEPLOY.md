@@ -5,6 +5,14 @@
 
 **Thời gian dự kiến:** 25–35 phút cho lần triển khai đầu tiên (chủ yếu là thời gian Render dựng máy chủ).
 
+**Hệ thống thật đang chạy (đã deploy):**
+
+| Thành phần | URL |
+|---|---|
+| Frontend (Vercel) | <https://final-project-js-ten.vercel.app/> |
+| Backend API (Render) | <https://learnquiz-api.onrender.com/> — kiểm tra nhanh: [`/health`](https://learnquiz-api.onrender.com/health) |
+| Mã nguồn (GitHub) | <https://github.com/tamthientinvu-coder/FinalProjectJS> |
+
 ---
 
 ## Mục lục
@@ -53,10 +61,12 @@ Kết quả phải **rỗng** (không in ra dòng nào). Nếu có kết quả n
 
 Tệp `.gitignore` ở gốc dự án đã chặn sẵn `.env`, `.env.local`, `.env.*.local` — không cần sửa gì thêm.
 
+> **Repo của đồ án này đã tồn tại sẵn** tại **<https://github.com/tamthientinvu-coder/FinalProjectJS>**, đã push và đã được Render + Vercel đọc để deploy. Mục 1.2–1.3 dưới đây là các bước **đã làm xong** cho repo này — giữ lại làm tài liệu tham khảo nếu sau này cần tạo lại từ đầu (máy khác, tài khoản khác…). Có thể bỏ qua, đi thẳng Bước 2.
+
 ### 1.2. Tạo repository trên GitHub
 
 1. Đăng nhập [github.com](https://github.com) → góc trên bên phải, bấm dấu **+** → **New repository**
-2. Đặt tên, ví dụ `learnquiz` → chọn **Private** (khuyến nghị trong lúc chưa bảo vệ xong) hoặc **Public**
+2. Đặt tên, ví dụ `FinalProjectJS` → chọn **Private** (khuyến nghị trong lúc chưa bảo vệ xong) hoặc **Public**
 3. **Không** tick "Add a README file" (dự án đã có sẵn) → bấm **Create repository**
 4. GitHub hiện ra một trang có sẵn các dòng lệnh — copy đoạn dưới mục **"…or push an existing repository from the command line"**
 
@@ -69,11 +79,11 @@ git init                                          # nếu chưa từng git init
 git add .
 git commit -m "Initial commit — LearnQuiz"
 git branch -M main
-git remote add origin https://github.com/<ten-tai-khoan>/learnquiz.git
+git remote add origin https://github.com/tamthientinvu-coder/FinalProjectJS.git
 git push -u origin main
 ```
 
-Thay `<ten-tai-khoan>` bằng tên tài khoản GitHub thật. Sau khi chạy xong, tải lại trang GitHub — phải thấy đủ hai thư mục `backend/`, `frontend/` và tệp `render.yaml` ở gốc.
+*(Tài khoản GitHub của đồ án: **tamthientinvu-coder** — email đăng ký `tamthientinvu@gmail.com`.)* Sau khi chạy xong, tải lại trang GitHub — phải thấy đủ hai thư mục `backend/`, `frontend/` và tệp `render.yaml` ở gốc.
 
 **Kiểm tra lại lần nữa trên GitHub:** vào tab **Code**, gõ `.env` vào ô tìm kiếm của repo (phím `t` để bật tìm tệp nhanh) — không được ra kết quả nào ngoài `.env.example`.
 
@@ -99,18 +109,19 @@ Dự án đã có sẵn `render.yaml` ở thư mục gốc, khai báo đủ cả
 
 1. Đăng nhập [dashboard.render.com](https://dashboard.render.com)
 2. Góc trên bên phải → bấm nút tím **New** → chọn **Blueprint** trong danh sách sổ xuống
-3. Nếu đây là lần đầu Render truy cập GitHub: bấm **Configure account** → chọn **Only select repositories** → tick vào repo `learnquiz` → **Install**
-4. Quay lại màn hình Blueprint, chọn repository `learnquiz` trong danh sách → bấm **Connect**
-5. Render tự đọc `render.yaml` và hiện ra bản xem trước gồm **2 tài nguyên**: database `learnquiz-db` và web service `learnquiz-api`
+3. Nếu đây là lần đầu Render truy cập GitHub: bấm **Configure account** → chọn **Only select repositories** → tick vào repo `FinalProjectJS` (tài khoản `tamthientinvu-coder`) → **Install**
+4. Quay lại màn hình Blueprint, chọn repository `FinalProjectJS` trong danh sách → bấm **Connect**
+5. Render tự đọc `render.yaml` và hiện ra bản xem trước gồm **2 tài nguyên**: database `learnquiz-db` và web service `learnquiz-api` *(tên hai tài nguyên này do `render.yaml` đặt, khác với tên repo GitHub)*
 6. Đặt tên cho Blueprint (không quan trọng, ví dụ `learnquiz`) → kéo xuống dưới
 7. Render sẽ hỏi giá trị cho các biến có `sync: false` trong `render.yaml` — đúng 2 ô:
    - `FE_URL` — tạm điền `http://localhost:5173` (sẽ sửa lại ở Bước 5, vì lúc này Vercel chưa deploy)
    - `GEMINI_API_KEY` — dán key vừa lấy ở Bước 2
    *(Các biến còn lại như `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` có `generateValue: true` nên Render tự sinh chuỗi ngẫu nhiên, không cần điền.)*
 8. Bấm **Apply**
-9. Render chuyển sang màn hình build log — chờ khoảng **3–5 phút**. Ba việc diễn ra tuần tự, theo dõi được trong log:
+9. Render chuyển sang màn hình build log — chờ khoảng **3–5 phút**. Bốn việc diễn ra tuần tự, theo dõi được trong log:
    - Tạo PostgreSQL (trạng thái chuyển từ *Creating* → *Available*)
-   - `npm ci && npx prisma generate && npx prisma migrate deploy && npm run build` cho web service
+   - `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build` cho web service — cờ `--include=dev` bắt buộc phải có vì lệnh `npm run seed` chạy bằng `ts-node`, nằm trong `devDependencies` mà Render mặc định bỏ qua ở môi trường production
+   - Nạp dữ liệu mẫu (`npm run seed`) — script này **tự xoá dữ liệu khoá học/quiz cũ rồi tạo lại từ đầu**, còn tài khoản thì `upsert` (giữ nguyên nếu đã tồn tại) — xem thêm mục "Nạp dữ liệu mẫu" bên dưới
    - Container khởi động, Render tự gọi `healthCheckPath: /health` để xác nhận service sống
 10. Khi cả hai thẻ tài nguyên chuyển sang chấm tròn **xanh lá**, việc dựng hạ tầng đã xong
 
@@ -144,7 +155,7 @@ Dùng khi muốn kiểm soát từng biến, hoặc khi `render.yaml` không áp
 #### B2. Tạo web service
 
 1. Dashboard → **New** → **Web Service**
-2. Chọn repository `learnquiz` → **Connect**
+2. Chọn repository `FinalProjectJS` → **Connect**
 3. Điền:
 
 | Trường | Giá trị |
@@ -154,7 +165,7 @@ Dùng khi muốn kiểm soát từng biến, hoặc khi `render.yaml` không áp
 | Branch | `main` |
 | Root Directory | `backend` |
 | Runtime | Node |
-| Build Command | `npm ci && npx prisma generate && npx prisma migrate deploy && npm run build` |
+| Build Command | `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build` |
 | Start Command | `node dist/index.js` |
 | Plan | Free |
 
@@ -184,17 +195,17 @@ Build chạy **một lần mỗi lần deploy**. Start chạy **mỗi lần cont
 
 Lưu ý: dùng `migrate deploy` chứ **không** dùng `migrate dev`. `migrate dev` có thể xoá và tạo lại cơ sở dữ liệu — tuyệt đối không đưa vào production.
 
-### Nạp dữ liệu mẫu (chỉ làm một lần)
+### Nạp dữ liệu mẫu — hiện đã **tự động chạy mỗi lần deploy**
 
-1. Dashboard Render → mở service `learnquiz-api`
-2. Chọn tab **Shell** ở thanh menu ngang phía trên
-3. Chờ vài giây để shell kết nối vào container đang chạy, rồi gõ:
+`render.yaml` đã có `npm run seed` ngay trong `buildCommand`, nên **không cần vào Shell chạy tay** như trước nữa — cứ mỗi lần đẩy commit mới lên `main` (Render tự deploy lại), dữ liệu mẫu tự nạp lại.
 
-```bash
-npm run seed
-```
+Script `prisma/seed.ts` viết theo nguyên tắc **idempotent** (chạy lại nhiều lần không lỗi):
+- **Tài khoản** (`admin@learnquiz.vn`, `instructor@learnquiz.vn`, …) dùng `upsert` — đã tồn tại thì giữ nguyên, không tạo trùng.
+- **Khoá học, bài học, quiz, lượt đăng ký, bài nộp** bị **xoá sạch rồi tạo lại từ đầu** mỗi lần seed chạy.
 
-4. Thấy log in ra danh sách tài khoản/khoá học mẫu đã tạo là xong. Lệnh này **an toàn để chạy lại** nếu seed dùng `upsert`, nhưng thông thường chỉ cần chạy đúng một lần sau lần deploy đầu tiên.
+**Hệ quả cần biết:** nếu trong lúc demo có tạo khoá học mới hay nộp quiz thật, dữ liệu đó **sẽ mất** ở lần deploy kế tiếp (mỗi lần push code lên `main`). Đây là đánh đổi hợp lý cho một hệ thống demo — luôn có dữ liệu mẫu sạch để trình bày — nhưng không phù hợp nếu sau này đưa vào dùng thật với người dùng thật.
+
+Nếu cần seed lại thủ công mà không muốn deploy lại (ví dụ nghi dữ liệu bị lỗi giữa chừng): Dashboard Render → mở service `learnquiz-api` → tab **Shell** → gõ `npm run seed`.
 
 ### Kiểm tra
 
@@ -217,13 +228,13 @@ Nếu `db` không phải `"up"`, xem mục [Bảng tra lỗi](#11-bảng-tra-l�
 ## 4. Frontend trên Vercel
 
 1. Đăng nhập [vercel.com/new](https://vercel.com/new)
-2. Nếu chưa cấp quyền GitHub: bấm **Add GitHub Account** → chọn repo `learnquiz` → **Install**
-3. Trong danh sách repository hiện ra, tìm `learnquiz` → bấm **Import**
+2. Nếu chưa cấp quyền GitHub: bấm **Add GitHub Account** → chọn repo `FinalProjectJS` → **Install**
+3. Trong danh sách repository hiện ra, tìm `FinalProjectJS` → bấm **Import**
 4. Màn hình **Configure Project** hiện ra:
 
 | Trường | Giá trị |
 |---|---|
-| Project Name | tuỳ ý, ví dụ `learnquiz` (sẽ quyết định domain `learnquiz.vercel.app`) |
+| Project Name | tuỳ ý — Vercel tự đặt theo tên repo (`FinalProjectJS`) và thêm hậu tố ngẫu nhiên nếu trùng người khác đã dùng, nên đồ án này ra domain `final-project-js-ten.vercel.app` |
 | Framework Preset | **Vite** *(Vercel thường tự nhận diện đúng)* |
 | Root Directory | bấm **Edit** bên cạnh → gõ `frontend` → **Continue** |
 | Build Command | để nguyên mặc định `npm run build` |
@@ -238,7 +249,7 @@ Nếu `db` không phải `"up"`, xem mục [Bảng tra lỗi](#11-bảng-tra-l�
 
 6. Bấm **Deploy**
 7. Vercel build trong khoảng 30–60 giây, xong hiện màn hình pháo giấy 🎉 kèm ảnh chụp trang web và nút **Continue to Dashboard**
-8. Domain chính thức hiện ở đầu trang dashboard, dạng `https://learnquiz.vercel.app` — copy lại, dùng ở Bước 5
+8. Domain chính thức hiện ở đầu trang dashboard, dạng `https://final-project-js-ten.vercel.app` — copy lại, dùng ở Bước 5
 
 ### Hai điều dễ sai ở bước này
 
@@ -250,6 +261,10 @@ Nếu `db` không phải `"up"`, xem mục [Bảng tra lỗi](#11-bảng-tra-l�
 { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
 ```
 
+### Đo hiệu năng thực tế bằng Vercel Speed Insights
+
+Frontend đã cài `@vercel/speed-insights` và gắn sẵn `<SpeedInsights />` trong `main.tsx` — không cần thêm biến môi trường, không cần bật gì trên Vercel. Khi frontend chạy trên hạ tầng Vercel, chỉ số Core Web Vitals (LCP, CLS, INP…) tự động xuất hiện ở tab **Speed Insights** của project sau vài phút có lượt truy cập thật. Khi chạy `npm run dev` ở máy cá nhân hoặc trong Docker, thư viện tự nhận diện không phải môi trường Vercel và **không gửi dữ liệu đi đâu cả** — an toàn, không ảnh hưởng lúc phát triển.
+
 ---
 
 ## 5. Nối hai đầu lại — bước hay bị quên nhất
@@ -259,7 +274,7 @@ Nếu `db` không phải `"up"`, xem mục [Bảng tra lỗi](#11-bảng-tra-l�
 3. Tìm dòng `FE_URL` → bấm vào ô giá trị → sửa thành:
 
 ```
-https://learnquiz.vercel.app
+https://final-project-js-ten.vercel.app
 ```
 
 *(dán đúng domain Vercel vừa cấp ở Bước 4, **không** có dấu `/` ở cuối)*
@@ -276,7 +291,7 @@ Thiếu bước này thì frontend gọi API sẽ dính lỗi CORS: mở trang w
 Làm tuần tự, đừng bỏ qua bước nào — mỗi bước xác nhận một tầng khác nhau của hệ thống:
 
 1. **Tầng mạng/CSDL:** mở `https://learnquiz-api.onrender.com/health` → phải ra `{"status":"ok","db":"up"}`
-2. **Tầng CORS:** mở `https://learnquiz.vercel.app`, bấm F12 → tab **Console** → tải lại trang (F5) → không được có dòng đỏ nào nhắc tới CORS
+2. **Tầng CORS:** mở `https://final-project-js-ten.vercel.app`, bấm F12 → tab **Console** → tải lại trang (F5) → không được có dòng đỏ nào nhắc tới CORS
 3. **Tầng dữ liệu mẫu:** đăng nhập bằng tài khoản demo (xem `README.md` mục tài khoản mẫu) — phải vào được, thấy danh sách khoá học
 4. **Tầng nghiệp vụ:** mở một khoá học, làm thử một bài quiz, nộp bài — phải nhận được điểm và không thấy trường `isCorrect` nào bị lộ ra trước khi nộp (kiểm tra bằng tab **Network** của DevTools, xem response của API lấy câu hỏi)
 5. **Tầng AI (nếu bật):** vào trang soạn quiz với vai trò giảng viên/quản trị → bấm **Sinh câu hỏi bằng AI** → phải nhận được câu hỏi soạn sẵn trong vài giây; nếu báo lỗi 429 nghĩa là hết hạn mức Gemini miễn phí, không phải lỗi hệ thống
@@ -414,7 +429,8 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 | Frontend vẫn gọi `localhost:3000` dù đã sửa `VITE_API_URL` | Đổi biến nhưng chưa Redeploy | Vercel → Deployments → **⋯** → **Redeploy**, không phải chỉ chờ hay restart |
 | Build Render báo lỗi `prisma generate` không tìm thấy engine | Thiếu bước `npx prisma generate` trong Build Command, hoặc cache Render cũ | Xoá cache: Render → Settings → **Clear build cache & deploy** |
 | Deploy Vercel báo `Root Directory` không tìm thấy `package.json` | Chưa đổi Root Directory thành `frontend` | Vercel → Settings → General → **Root Directory** → sửa thành `frontend` → Save → Redeploy |
-| Seed chạy báo lỗi `Unique constraint failed` | Đã seed trước đó rồi chạy lại | Bỏ qua nếu script seed dùng `upsert` (an toàn); nếu không, chỉ seed một lần duy nhất sau deploy đầu tiên |
+| Build báo lỗi thiếu `ts-node` khi chạy `npm run seed` | Build Command thiếu cờ `--include=dev` — Render mặc định bỏ `devDependencies` ở production | Sửa Build Command thành `npm ci --include=dev && …` như Bước 3 |
+| Sau khi deploy lại, khoá học/quiz vừa demo biến mất | `npm run seed` tự chạy lại mỗi lần deploy, luôn xoá và tạo lại dữ liệu khoá học | Đây là hành vi **cố ý** của `render.yaml` hiện tại, không phải lỗi — xem mục "Nạp dữ liệu mẫu" ở Bước 3 |
 
 ---
 

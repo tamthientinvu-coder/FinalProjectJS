@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import theme from "./theme/theme";
 import router from "./router";
 import { AuthProvider } from "./context/AuthContext";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
+      <SpeedInsights />
     </ThemeProvider>
   </React.StrictMode>
 );

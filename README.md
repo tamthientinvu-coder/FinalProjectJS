@@ -5,11 +5,13 @@
 
 📄 Tài liệu đồ án: **[`docs/DE-AN.md`](docs/DE-AN.md)** · 🚀 Hướng dẫn triển khai: **[`docs/DEPLOY.md`](docs/DEPLOY.md)**
 
+🌐 **Đang chạy thật:** Frontend [final-project-js-ten.vercel.app](https://final-project-js-ten.vercel.app/) · Backend [learnquiz-api.onrender.com](https://learnquiz-api.onrender.com/) ([`/health`](https://learnquiz-api.onrender.com/health)) · Mã nguồn [github.com/tamthientinvu-coder/FinalProjectJS](https://github.com/tamthientinvu-coder/FinalProjectJS)
+
 | | |
 |---|---|
 | **Backend** | Node.js · Express · TypeScript · Prisma · PostgreSQL |
 | **Frontend** | React 19 · TypeScript · Vite · MUI · React Router · React Hook Form |
-| **Hạ tầng** | RESTful API `/api/v1` · Docker · Render (BE) · Vercel (FE) |
+| **Hạ tầng** | RESTful API `/api/v1` · Docker · Render (BE) · Vercel (FE) · Vercel Speed Insights |
 | **AI** | Google Gemini — sinh quiz, giải thích đáp án sai, tóm tắt bài học |
 
 ---
