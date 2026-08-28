@@ -6,6 +6,7 @@ databases:
     databaseName: learnquiz_db
     user: learnquiz
     plan: free
+    region: singapore
 
 services:
   - type: web
