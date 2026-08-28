@@ -121,7 +121,8 @@ flowchart LR
 | Log | pino | Log JSON có cấu trúc, tự động che field nhạy cảm (`redact`) |
 | Triển khai | Docker · Render · Vercel | Đúng yêu cầu đề tài; free tier đủ dùng cho demo |
 | AI | Google Gemini | Đúng yêu cầu đề tài; gọi **chỉ từ backend** để không lộ API key |
-| Giám sát | Vercel Speed Insights (`@vercel/speed-insights`) | Đo Core Web Vitals thực tế của người dùng; chỉ hoạt động khi chạy trên hạ tầng Vercel, không cần biến môi trường |
+| Giám sát | Vercel Speed Insights + Web Analytics (`@vercel/speed-insights`, `@vercel/analytics`) | Đo Core Web Vitals và lượt truy cập thực tế; chỉ hoạt động trên hạ tầng Vercel, không cần biến môi trường |
+| Uptime | GitHub Actions (`uptime-ping.yml`) | Ping `/health` mỗi 10 phút — giữ Render free tier không ngủ, đồng thời cảnh báo qua email khi backend lỗi |
 
 ---
 

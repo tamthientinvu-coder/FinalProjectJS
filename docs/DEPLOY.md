@@ -29,6 +29,8 @@
 9. [Quay lui khi deploy hỏng](#9-quay-lui-khi-deploy-hỏng)
 10. [Checklist trước buổi bảo vệ](#10-checklist-trước-buổi-bảo-vệ)
 11. [Bảng tra lỗi thường gặp](#11-bảng-tra-lỗi-thường-gặp)
+12. [Giám sát & thông báo sau khi deploy](#12-giám-sát--thông-báo-sau-khi-deploy)
+13. [Quản lý dữ liệu bằng Prisma Studio từ máy tính](#13-quản-lý-dữ-liệu-bằng-prisma-studio-từ-máy-tính)
 
 ---
 
@@ -431,6 +433,92 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 | Deploy Vercel báo `Root Directory` không tìm thấy `package.json` | Chưa đổi Root Directory thành `frontend` | Vercel → Settings → General → **Root Directory** → sửa thành `frontend` → Save → Redeploy |
 | Build báo lỗi thiếu `ts-node` khi chạy `npm run seed` | Build Command thiếu cờ `--include=dev` — Render mặc định bỏ `devDependencies` ở production | Sửa Build Command thành `npm ci --include=dev && …` như Bước 3 |
 | Sau khi deploy lại, khoá học/quiz vừa demo biến mất | `npm run seed` tự chạy lại mỗi lần deploy, luôn xoá và tạo lại dữ liệu khoá học | Đây là hành vi **cố ý** của `render.yaml` hiện tại, không phải lỗi — xem mục "Nạp dữ liệu mẫu" ở Bước 3 |
+
+---
+
+## 12. Giám sát & thông báo sau khi deploy
+
+### 12.1. Vercel Web Analytics — đã cài
+
+`frontend` đã cài `@vercel/analytics` và gắn `<Analytics />` trong `main.tsx` (cùng chỗ với `<SpeedInsights />`) — không cần thêm biến môi trường. Khác với Speed Insights (đo hiệu năng tải trang), Web Analytics đếm **lượt xem trang và người dùng** (pageview, visitor, trang được xem nhiều nhất).
+
+Để xem số liệu: Vercel Dashboard → chọn project → tab **Analytics**. Lần đầu vào tab này, Vercel có thể yêu cầu bấm **Enable** một lần (sản phẩm tách riêng khỏi việc deploy) — sau khi bật, số liệu xuất hiện dần theo lượt truy cập thật, không hồi tố dữ liệu cũ.
+
+### 12.2. Preview Deployments — đã bật sẵn, không cần cài
+
+Đây là hành vi **mặc định** của Vercel khi project được kết nối qua GitHub — không có nút "cài đặt" riêng. Cơ chế: mỗi khi có commit mới trên một nhánh **khác** `main` (hoặc mở Pull Request), Vercel tự build và cấp một URL xem trước độc lập, không ảnh hưởng tới bản production đang chạy tại `final-project-js-ten.vercel.app`.
+
+Cách kiểm tra đang hoạt động:
+
+```bash
+git checkout -b thu-nghiem-preview
+git commit --allow-empty -m "test: kiểm tra preview deployment"
+git push -u origin thu-nghiem-preview
+```
+
+Mở repo trên GitHub → tạo Pull Request từ nhánh này vào `main` — bot **Vercel** sẽ tự bình luận vào PR kèm link dạng `https://final-project-js-ten-git-thu-nghiem-preview-....vercel.app`. Kiểm tra xong thì xoá Pull Request và nhánh, không cần merge.
+
+*(Cũng có thể xem trực tiếp không cần tạo PR: Vercel Dashboard → tab Deployments → mọi bản build từ nhánh khác `main` đều gắn nhãn "Preview" thay vì "Production".)*
+
+### 12.3. Uptime Ping — đã cài bằng GitHub Actions
+
+Thêm workflow `.github/workflows/uptime-ping.yml`, chạy lịch **mỗi 10 phút**, gọi `https://learnquiz-api.onrender.com/health` và kiểm tra cả mã HTTP lẫn nội dung JSON (`status: ok`, `db: up`). Repo này ở chế độ **public** nên chạy lịch không tốn giới hạn phút chạy miễn phí của private repo.
+
+Hai tác dụng cùng lúc:
+- **Giữ ấm** service Render free tier — ping đều đặn dưới 15 phút nên service không kịp vào trạng thái ngủ, gần như xoá bỏ độ trễ khởi động lạnh khi giảng viên hoặc học viên truy cập.
+- **Cảnh báo uptime** — nếu backend lỗi hoặc CSDL rớt kết nối, job sẽ đỏ trên tab **Actions**, và GitHub tự gửi email cho chủ repo (`tamthientinvu-coder`) mà không cần cấu hình gì thêm.
+
+Kiểm tra: GitHub → repo → tab **Actions** → workflow **Uptime ping** → mỗi lần chạy phải là dấu tích xanh. Có thể bấm **Run workflow** để kiểm tra ngay không cần chờ lịch.
+
+### 12.4. Deploy Notifications — bật sẵn theo mặc định của từng nền tảng
+
+Không phải một gói cần cài, mà là cấu hình thông báo có sẵn ở tài khoản Render và Vercel:
+
+| Nền tảng | Mặc định | Xem/đổi ở đâu |
+|---|---|---|
+| **Render** | Tự gửi email khi build hoặc deploy thất bại, gửi tới email tài khoản | Render Dashboard → góc trên phải, avatar → **Account Settings** → **Notifications** |
+| **Vercel** | Tự gửi email khi deploy production thất bại | Vercel Dashboard → avatar → **Settings** → **Notifications** — có thể bật thêm **Deployment Summary** (tóm tắt mỗi lần deploy) hoặc nối **Slack/Discord** qua mục **Integrations** nếu muốn nhận vào kênh chat thay vì email |
+
+Vì đây là cài đặt theo tài khoản (yêu cầu đăng nhập), cha cần vào hai trang trên và bật tay một lần — không có API hay tệp cấu hình nào trong repo điều khiển được việc này.
+
+---
+
+## 13. Quản lý dữ liệu bằng Prisma Studio từ máy tính
+
+Prisma Studio là giao diện web (chạy cục bộ trên máy, không phải trên Render) để xem và sửa trực tiếp dữ liệu trong PostgreSQL — tiện khi cần kiểm tra hoặc chỉnh dữ liệu thật mà không phải viết SQL.
+
+### 13.1. Với cơ sở dữ liệu cục bộ (Docker, lúc lập trình)
+
+```bash
+cd backend
+npx prisma studio
+```
+
+Tự mở `http://localhost:5555`, đọc `DATABASE_URL` sẵn có trong `backend/.env` (trỏ vào Postgres cổng `5433` chạy bằng Docker) — không cần cấu hình gì thêm.
+
+### 13.2. Với cơ sở dữ liệu thật trên Render — cần một bước chuẩn bị
+
+`backend/.env` (cục bộ) đang trỏ vào Postgres Docker, **không phải** cơ sở dữ liệu Render — Prisma Studio mặc định sẽ mở nhầm CSDL rỗng ở máy nếu chạy thẳng `npx prisma studio`. Repo đã cài sẵn `dotenv-cli` và thêm lệnh riêng để tách hai môi trường:
+
+```bash
+npm run studio:prod
+```
+
+Lệnh này đọc biến từ tệp `backend/.env.production.local` — **tệp này cha tự tạo, không có sẵn trong repo và không bao giờ lên git** (đã nằm trong mẫu `.env.*.local` của `.gitignore`). Các bước một lần:
+
+1. Render Dashboard → database `learnquiz-db` → tab **Connections**
+2. Copy chuỗi **External Database URL** (khác với Internal Database URL dùng ở Bước 3 — External mới kết nối được từ ngoài mạng Render, tức là từ máy cá nhân)
+3. Tạo tệp mới `backend/.env.production.local` với đúng một dòng:
+
+```env
+DATABASE_URL="<dán External Database URL vừa copy>?sslmode=require"
+```
+
+*(thêm `?sslmode=require` ở cuối — Render yêu cầu kết nối từ ngoài phải mã hoá TLS, thiếu cờ này sẽ báo lỗi kết nối)*
+
+4. Chạy `npm run studio:prod` → Prisma Studio mở ở `http://localhost:5555`, lần này là dữ liệu **thật** trên Render
+
+**Cẩn trọng:** đây là sửa trực tiếp trên dữ liệu thật đang phục vụ người dùng thật (nếu có) — sửa/xoá nhầm không có "hoàn tác". Đóng tab và dừng lệnh (`Ctrl+C`) ngay sau khi xong việc, đừng để Prisma Studio mở treo cả buổi.
 
 ---
 

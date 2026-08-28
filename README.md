@@ -11,7 +11,7 @@
 |---|---|
 | **Backend** | Node.js · Express · TypeScript · Prisma · PostgreSQL |
 | **Frontend** | React 19 · TypeScript · Vite · MUI · React Router · React Hook Form |
-| **Hạ tầng** | RESTful API `/api/v1` · Docker · Render (BE) · Vercel (FE) · Vercel Speed Insights |
+| **Hạ tầng** | RESTful API `/api/v1` · Docker · Render (BE) · Vercel (FE) · Vercel Speed Insights & Analytics · Uptime ping (GitHub Actions) |
 | **AI** | Google Gemini — sinh quiz, giải thích đáp án sai, tóm tắt bài học |
 
 ---
@@ -78,7 +78,8 @@ Mật khẩu chung: **`123456`**
 | `npm test` | Chạy 318 phép kiểm thử — không cần cơ sở dữ liệu |
 | `npm run test:unit` | Chỉ chạy phần kiểm thử hàm thuần (nhanh nhất) |
 | `npx prisma migrate dev --name <tên>` | Tạo migration sau khi sửa `schema.prisma` |
-| `npx prisma studio` | Xem và sửa dữ liệu bằng giao diện web |
+| `npx prisma studio` | Xem và sửa dữ liệu bằng giao diện web (CSDL cục bộ) |
+| `npm run studio:prod` | Như trên nhưng cho CSDL thật trên Render — cần tạo `backend/.env.production.local` trước, xem [`docs/DEPLOY.md`](docs/DEPLOY.md#13-quản-lý-dữ-liệu-bằng-prisma-studio-từ-máy-tính) |
 
 ### Frontend
 | Lệnh | Tác dụng |

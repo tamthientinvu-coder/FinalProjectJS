@@ -1,0 +1,31 @@
+name: Uptime ping
+
+# Ping /health của backend mỗi 10 phút để:
+#   1) Giữ service Render (gói Free) không bị "ngủ" sau 15 phút không có request
+#   2) Báo lỗi (job đỏ trên tab Actions, GitHub tự gửi email cho chủ repo)
+#      nếu backend không phản hồi đúng {"status":"ok"} — coi như cảnh báo uptime
+#
+# Repo này là public nên Actions chạy lịch không tốn phút chạy miễn phí giới hạn.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # cho phép bấm "Run workflow" để kiểm tra tay
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gọi /health và kiểm tra trạng thái
+        run: |
+          set -e
+          RES=$(curl -s -m 20 -w "\n%{http_code}" https://learnquiz-api.onrender.com/health)
+          BODY=$(echo "$RES" | head -n -1)
+          CODE=$(echo "$RES" | tail -n 1)
+          echo "HTTP $CODE — $BODY"
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Backend trả về mã $CODE, không phải 200"
+            exit 1
+          fi
+          echo "$BODY" | grep -q '"status":"ok"' || { echo "::error::Body không chứa status:ok — $BODY"; exit 1; }
+          echo "$BODY" | grep -q '"db":"up"' || { echo "::error::Body không chứa db:up — $BODY"; exit 1; }
