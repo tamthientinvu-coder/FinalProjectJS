@@ -5,21 +5,19 @@ Bộ hồ sơ nằm trong `FinalProject/docs/`:
 | Tệp | Nội dung |
 |---|---|
 | `BAO-CAO-DO-AN-LearnQuiz.docx` | Báo cáo chính — bản nộp. Mục lục là **trường tự động của Word**. |
-| `BAO-CAO-DO-AN-LearnQuiz.pdf` | Bản PDF 69 trang, mục lục đã điền sẵn số trang — dùng để xem nhanh, in thử hoặc gửi qua email. |
+| `BAO-CAO-DO-AN-LearnQuiz.pdf` | Bản PDF 71 trang, mục lục đã điền sẵn số trang — dùng để xem nhanh, in thử hoặc gửi qua email. |
 | `SLIDE-BAO-VE-LearnQuiz.pptx` | Bộ slide bảo vệ 17 trang. |
 | `hinh-ve.zip` | 10 sơ đồ dạng PNG kèm mã nguồn sơ đồ (Mermaid `.mmd`, Graphviz `.dot`) để sửa và xuất lại. |
 
 ---
 
-## 1. Ba chỗ bắt buộc phải điền
+## 1. Chỉ còn một chỗ phải điền
 
-Mở `BAO-CAO-DO-AN-LearnQuiz.docx`, điền vào **trang bìa chính (trang 1)** và **bìa phụ (trang 2)**:
+Họ tên học viên (**VŨ TÂM THIỆN TÍN**) và giảng viên hướng dẫn (**NGUYỄN LÊ HOÀNG THÔNG**) đã được điền sẵn ở bìa chính, bìa phụ, trang Lời cảm ơn và slide bảo vệ.
 
-- Họ và tên học viên
-- Mã học viên
-- Họ và tên giảng viên hướng dẫn
+Còn lại duy nhất **mã học viên** — điền vào bìa chính (trang 1) và bìa phụ (trang 2).
 
-Trang **Lời cảm ơn** có một dòng chấm ở cuối để ký tên; trang **Nhận xét của giảng viên hướng dẫn** để trống cho thầy/cô ghi.
+Trang **Nhận xét của giảng viên hướng dẫn** để trống cho thầy ghi và ký.
 
 ## 2. Cập nhật mục lục trong Word
 
@@ -57,6 +55,7 @@ Chương 2. Cơ sở lý thuyết và công nghệ
 Chương 3. Phân tích và thiết kế hệ thống
 Chương 4. Cài đặt hệ thống
 Chương 5. Kiểm thử và triển khai
+   (5.7.1 giải trình lựa chọn hạ tầng Vercel + Render)
 Chương 6. Kết luận và hướng phát triển
 Tài liệu tham khảo (16 mục)
 Phụ lục A. Bảng tra cứu mã lỗi và thông báo
@@ -65,7 +64,7 @@ Phụ lục C. Hướng dẫn cài đặt và chạy thử
 Phụ lục D. Kịch bản trình diễn khi bảo vệ
 ```
 
-Toàn bộ: **69 trang · 10 hình vẽ · 42 bảng biểu**.
+Toàn bộ: **71 trang · 10 hình vẽ · 43 bảng biểu**.
 
 ## 5. Nếu muốn bổ sung ảnh chụp màn hình
 
