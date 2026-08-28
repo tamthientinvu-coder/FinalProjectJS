@@ -15,6 +15,13 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # Đặt ở cấp job để MỌI bước dùng Prisma đều có DATABASE_URL — thiếu biến này,
+    # `prisma validate`/`generate` báo lỗi "Environment variable not found: DATABASE_URL"
+    # dù không thật sự kết nối CSDL nào (đây là lỗi đã khiến CI đỏ liên tục trước đây).
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      JWT_ACCESS_SECRET: ci_access_secret
+      JWT_REFRESH_SECRET: ci_refresh_secret
 
     steps:
       - uses: actions/checkout@v4
@@ -39,11 +46,8 @@ jobs:
 
       - name: Chạy bộ kiểm thử
         # Bộ test dùng Prisma giả lập trong bộ nhớ nên KHÔNG cần dựng cơ sở dữ liệu
+        # (biến môi trường đã khai báo ở cấp job phía trên)
         run: npm test
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-          JWT_ACCESS_SECRET: ci_access_secret
-          JWT_REFRESH_SECRET: ci_refresh_secret
 
       - name: Biên dịch sang JavaScript
         run: npm run build
