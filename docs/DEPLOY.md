@@ -13,6 +13,18 @@
 | Backend API (Render) | <https://learnquiz-api.onrender.com/> — kiểm tra nhanh: [`/health`](https://learnquiz-api.onrender.com/health) |
 | Mã nguồn (GitHub) | <https://github.com/tamthientinvu-coder/FinalProjectJS> |
 
+> ## ⚠️ QUAN TRỌNG NHẤT — CSDL Render Free hết hạn và **bị xoá tự động**
+>
+> Trang Info của `learnquiz-db` trên Render Dashboard ghi rõ: *"Your database will expire on **27/09/2026**. The database will be deleted unless you upgrade to a paid compute plan."* — đây **không phải** hiện tượng "ngủ" tạm thời như web service Free, mà là **xoá vĩnh viễn toàn bộ dữ liệu** đúng ~30 ngày sau khi tạo, trừ khi nâng cấp lên gói trả phí.
+>
+> **Cha kiểm tra ngay:** nếu ngày bảo vệ đồ án rơi **sau 27/09/2026**, hệ thống sẽ sập hoàn toàn (báo lỗi kết nối CSDL) nếu không xử lý trước. Ba lựa chọn, làm một trong ba **trước ngày hết hạn**:
+>
+> 1. **Nâng cấp `learnquiz-db` lên gói trả phí thấp nhất của Render** (Dashboard → `learnquiz-db` → banner cảnh báo → *"upgrade to a paid compute plan"*) — dữ liệu giữ nguyên, không gián đoạn, nhưng bắt đầu tốn phí hàng tháng.
+> 2. **Tạo CSDL Free mới ngay trước ngày bảo vệ** (vài ngày trước là đủ) rồi trỏ `DATABASE_URL` trên `learnquiz-api` sang CSDL mới, chạy lại migrate + seed — miễn phí nhưng phải nhớ làm lại đúng lịch mỗi ~30 ngày.
+> 3. Nếu chỉ demo bằng Docker cục bộ (Bước 7) trong buổi bảo vệ thì không bị ảnh hưởng, vì Docker dùng CSDL riêng trên máy, không liên quan tới CSDL Render.
+>
+> Xem lại ngày hết hạn thật trên Render Dashboard trước khi quyết định — ngày `27/09/2026` là ngày quan sát được tại thời điểm viết tài liệu này, có thể lệch nếu CSDL được tạo lại.
+
 ---
 
 ## Mục lục
@@ -147,7 +159,7 @@ Dùng khi muốn kiểm soát từng biến, hoặc khi `render.yaml` không áp
 | Database | `learnquiz_db` |
 | User | `learnquiz` |
 | Region | Singapore *(gần Việt Nam nhất, giảm độ trễ)* |
-| PostgreSQL Version | mặc định (16) |
+| PostgreSQL Version | để mặc định — Render tự chọn bản mới nhất tại thời điểm tạo (thực tế CSDL của đồ án này ra bản **18**, khác với bản 16 dùng ở Docker cục bộ; Prisma tương thích cả hai nên không ảnh hưởng) |
 | Plan | **Free** |
 
 3. Bấm **Create Database**
@@ -386,6 +398,7 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 
 **Hạ tầng**
 
+- [ ] **`learnquiz-db` chưa quá ngày hết hạn ghi trên Render Dashboard** (xem cảnh báo đầu tài liệu) — nếu ngày bảo vệ sau ngày hết hạn, phải nâng cấp hoặc tạo CSDL mới trước
 - [ ] `/health` trả `{"status":"ok","db":"up"}`
 - [ ] Frontend tải được, không có lỗi CORS trong Console
 - [ ] Migration đã áp dụng, seed đã chạy, đăng nhập được bằng tài khoản demo
@@ -424,6 +437,7 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 | `blocked by CORS policy` trong Console | `FE_URL` trên Render sai hoặc còn dấu `/` cuối | Vào Render → Environment → sửa `FE_URL` → Save, chờ deploy lại |
 | Vào thẳng `/courses/5` ra 404 | Thiếu rewrite của SPA | Kiểm tra `frontend/vercel.json` có đúng nội dung như Bước 4 |
 | `Can't reach database server` trong log Render | Dùng External Database URL thay vì Internal | Đổi `DATABASE_URL` sang **Internal Database URL** (Database → tab Connections) |
+| Mọi API trả lỗi 500, `/health` báo `db` không phải `up`, đột ngột không rõ lý do | CSDL Free đã tới ngày hết hạn ~30 ngày và bị Render xoá | Kiểm tra banner cảnh báo trên trang `learnquiz-db` — xem mục cảnh báo đầu tài liệu để nâng cấp hoặc tạo CSDL mới |
 | `relation "users" does not exist` | Chưa chạy migration | Kiểm tra Build Command có `npx prisma migrate deploy`; xem lại tab Logs xem bước này có chạy không |
 | Request đầu tiên chờ ~30–50 giây | Service Free của Render đang ngủ (sau 15 phút không có request) | Ping `/health` trước khi demo, hoặc set thêm dịch vụ ping ngoài (uptimerobot.com, tuỳ chọn) |
 | Nút "Sinh câu hỏi bằng AI" bị mờ/không bấm được | Thiếu `GEMINI_API_KEY` trên Render | Thêm biến ở tab Environment rồi Save (Render tự deploy lại) |

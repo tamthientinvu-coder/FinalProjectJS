@@ -111,7 +111,7 @@ flowchart LR
 | Ngôn ngữ | TypeScript (cả FE và BE) | Bắt lỗi kiểu ngay lúc biên dịch; dùng chung kiểu dữ liệu API giữa hai đầu |
 | Backend | Node.js + Express 4 | Đúng yêu cầu đề tài; middleware chain rõ ràng, dễ trình bày |
 | ORM | Prisma 5 | Schema là nguồn sự thật duy nhất; migration có phiên bản; type-safe |
-| CSDL | PostgreSQL 16 | Quan hệ nhiều-nhiều và ràng buộc unique là trung tâm đề tài |
+| CSDL | PostgreSQL 16 (Docker cục bộ) / 18 (Render production — do Render tự chọn tại thời điểm tạo, không ghim phiên bản trong `render.yaml`) | Quan hệ nhiều-nhiều và ràng buộc unique là trung tâm đề tài; Prisma tương thích cả hai phiên bản nên chênh lệch không ảnh hưởng |
 | Validate | Yup | Dùng **cùng một thư viện** ở cả FE và BE — quy tắc viết một lần, hiểu một kiểu |
 | Auth | JWT (access + refresh) + bcrypt | Không cần lưu session phía server, phù hợp kiến trúc tách rời |
 | Frontend | React 19 + Vite | Đúng yêu cầu đề tài; Vite build nhanh, HMR tức thì |
@@ -396,7 +396,7 @@ Hai điều này được **kiểm chứng tự động**: bộ test gọi HTTP 
 
 ## 9. Checklist nghiệm thu Production *(theo Bài 11 — Capstone Prep)*
 
-**Hạ tầng** — FE Vercel tải được, không lỗi CORS · BE `/health` trả `{"status":"ok"}` · migration đã áp dụng, seed đủ dữ liệu · `FE_URL` đã whitelist · không biến môi trường nào còn trỏ `localhost`.
+**Hạ tầng** — FE Vercel tải được, không lỗi CORS · BE `/health` trả `{"status":"ok"}` · migration đã áp dụng, seed đủ dữ liệu · `FE_URL` đã whitelist · không biến môi trường nào còn trỏ `localhost` · **CSDL Free trên Render chưa tới ngày hết hạn ~30 ngày (xem cảnh báo đầu `DEPLOY.md`) — nếu không, toàn hệ thống sập đúng ngày bảo vệ**.
 
 **Bảo mật** — `git log --all --full-history -- .env` cho kết quả rỗng · `npm audit` không còn lỗ hổng critical/high · `helmet()` đã bật · rate limit cho `/auth/*` và `/ai/*` · không response nào chứa `password` hay `refreshToken` · `NODE_ENV=production` trên Render.
 

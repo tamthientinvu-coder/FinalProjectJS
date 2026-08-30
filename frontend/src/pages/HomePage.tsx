@@ -8,7 +8,7 @@ const SPRINTS: { label: string; done: boolean; text: string }[] = [
   { label: "Xong", done: true, text: "Sprint 2 · Bài học, đăng ký học, học theo thứ tự và theo dõi tiến độ" },
   { label: "Xong", done: true, text: "Sprint 3 · Quiz: soạn đề, làm bài, server chấm điểm, xem lại đáp án, làm lại" },
   { label: "Xong", done: true, text: "Sprint 4 · Duyệt khóa học, quản lý người dùng, thống kê" },
-  { label: "Kế tiếp", done: false, text: "Sprint 5 · Tích hợp Gemini, Docker, CI/CD, triển khai cloud" },
+  { label: "Xong", done: true, text: "Sprint 5 · Tích hợp Gemini, Docker, CI/CD, triển khai cloud" },
 ];
 
 export default function HomePage() {
