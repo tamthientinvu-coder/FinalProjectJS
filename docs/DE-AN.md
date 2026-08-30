@@ -438,6 +438,7 @@ Năm khẳng định quan trọng nhất mà bộ test bảo vệ:
 |---|---|---|
 | Render free tier "ngủ đông" sau 15 phút không dùng | Request đầu tiên khi demo chờ ~50 giây | Ping `/health` bằng UptimeRobot trước buổi bảo vệ 30 phút |
 | Gemini API hết hạn mức hoặc lỗi mạng | Tính năng AI chết giữa buổi demo | Bắt lỗi và trả thông báo thân thiện; chuẩn bị sẵn ảnh chụp kết quả AI dự phòng |
+| Model Gemini bị Google ngừng hỗ trợ (đã xảy ra với `gemini-2.0-flash`, shutdown 01/06/2026) | AI trả lỗi 404 cho tới khi đổi model | Đổi `GEMINI_MODEL` sang model còn hỗ trợ (`gemini-3.6-flash`) trong cả repo lẫn biến môi trường Render — xem cảnh báo ở `DEPLOY.md` |
 | Đổi thứ tự bài học vi phạm `@@unique([courseId, order])` | Lỗi 409 khi kéo thả | Cập nhật trong transaction, đi qua giá trị `order` âm tạm thời |
 | Sprint 3 (quiz) là phần phức tạp nhất | Trễ tiến độ toàn đồ án | Đặt Sprint 3 vào giữa kế hoạch, còn hai sprint đệm phía sau |
 | Quên `npx prisma migrate deploy` khi deploy | API 500 vì bảng chưa tồn tại | Đưa lệnh vào Build Command của Render |
@@ -451,7 +452,7 @@ Node.js ≥ 20 · npm ≥ 10 · Docker Desktop (hoặc PostgreSQL 16 cài sẵn)
 
 ### Bước 1 — Khởi động cơ sở dữ liệu
 ```bash
-docker compose up -d          # Postgres tại cổng 5432, Adminer tại http://localhost:8080
+docker compose up -d          # Postgres tại cổng 5433, Adminer tại http://localhost:8080
 ```
 
 ### Bước 2 — Backend

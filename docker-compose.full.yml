@@ -34,7 +34,7 @@ services:
       JWT_REFRESH_SECRET: f6458f201a476ad459e065ca66c63ce2306003bece8a96eb99a7e1ad325aca9b
       FE_URL: http://localhost:8080
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
     ports:
       - "3000:3000"
     depends_on:

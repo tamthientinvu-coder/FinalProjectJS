@@ -23,7 +23,7 @@
 ```bash
 docker compose up -d
 ```
-PostgreSQL chạy ở cổng `5432`, Adminer ở <http://localhost:8080>.
+PostgreSQL chạy ở cổng `5433`, Adminer ở <http://localhost:8080>.
 *(Nếu đã cài sẵn PostgreSQL, bỏ qua bước này và sửa `DATABASE_URL` trong `backend/.env`.)*
 
 ### 2. Backend

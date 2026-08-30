@@ -25,6 +25,14 @@
 >
 > Xem lại ngày hết hạn thật trên Render Dashboard trước khi quyết định — ngày `27/09/2026` là ngày quan sát được tại thời điểm viết tài liệu này, có thể lệch nếu CSDL được tạo lại.
 
+> ## ⚠️ Model Gemini mặc định đã được Google ngừng hỗ trợ
+>
+> `gemini-2.0-flash` — model AI dùng cho ba tính năng Gemini của đồ án — nằm trong danh sách model bị Google **ngừng hoạt động (shutdown) kể từ 01/06/2026** (xem [trang deprecations chính thức](https://ai.google.dev/gemini-api/docs/deprecations)). Vì ngày hôm nay đã qua mốc đó, mọi lời gọi Gemini bằng model cũ sẽ trả lỗi 404 — nghĩa là ba tính năng AI trên bản production **có thể đang không hoạt động** cho tới khi xử lý xong bước dưới đây.
+>
+> **Đã sửa trong repo:** giá trị mặc định đổi sang `gemini-3.6-flash` (model thay thế do chính Google khuyến nghị) tại `backend/src/config/env.ts`, `backend/.env.example`, `docker-compose.full.yml` và `render.yaml`.
+>
+> **Cha vẫn phải tự làm thêm một bước thủ công:** sửa `render.yaml` **không** tự đồng bộ vào biến môi trường của service đã tồn tại trên Render — chỉ áp dụng cho service tạo mới từ Blueprint. Vào **Render Dashboard → `learnquiz-api` → Environment**, sửa `GEMINI_MODEL` từ `gemini-2.0-flash` thành `gemini-3.6-flash`, bấm **Save Changes** (Render tự deploy lại). Kiểm tra lại bằng cách gọi thử một trong ba tính năng AI (ví dụ bấm "Vì sao sai?" ở một câu quiz làm sai) và xác nhận không còn lỗi.
+
 ---
 
 ## Mục lục
@@ -196,7 +204,7 @@ Dùng khi muốn kiểm soát từng biến, hoặc khi `render.yaml` không áp
 | `JWT_REFRESH_EXPIRES` | `7d` |
 | `FE_URL` | tạm `http://localhost:5173`, sửa lại ở Bước 5 |
 | `GEMINI_API_KEY` | key lấy ở Bước 2 |
-| `GEMINI_MODEL` | `gemini-2.0-flash` |
+| `GEMINI_MODEL` | `gemini-3.6-flash` |
 
 6. Bấm **Create Web Service** ở cuối trang
 7. Theo dõi tab **Logs** — chờ tới khi thấy dòng server khởi động thành công và chấm trạng thái chuyển xanh lá
