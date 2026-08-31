@@ -53,7 +53,7 @@ jobs:
         run: npm run build
 
   frontend:
-    name: Frontend — kiểm tra kiểu và build
+    name: Frontend — kiểm thử, kiểm tra kiểu và build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -73,6 +73,9 @@ jobs:
 
       - name: Kiểm tra kiểu TypeScript
         run: npm run typecheck
+
+      - name: Chạy bộ kiểm thử
+        run: npm test
 
       - name: Build production
         run: npm run build
@@ -105,9 +108,7 @@ jobs:
       - name: npm audit (backend)
         working-directory: backend
         run: npm audit --audit-level=high
-        continue-on-error: true
 
       - name: npm audit (frontend)
         working-directory: frontend
         run: npm audit --audit-level=high
-        continue-on-error: true

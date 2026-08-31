@@ -1,0 +1,86 @@
+name: Production smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify backend and frontend bundle
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const frontend = "https://final-project-js-ten.vercel.app";
+          const backend = "https://learnquiz-api.onrender.com";
+          const requestTimeoutMs = 60_000;
+
+          const wait = (milliseconds) =>
+            new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+          async function fetchWithRetry(url) {
+            let lastError;
+
+            for (let attempt = 1; attempt <= 3; attempt += 1) {
+              try {
+                const response = await fetch(url, {
+                  signal: AbortSignal.timeout(requestTimeoutMs),
+                });
+                if (response.status < 500 || attempt === 3) return response;
+                lastError = new Error(`${url} returned ${response.status}`);
+              } catch (error) {
+                lastError = error;
+              }
+
+              await wait(attempt * 5_000);
+            }
+
+            throw lastError ?? new Error(`Failed to fetch ${url}`);
+          }
+
+          const health = await fetchWithRetry(`${backend}/health`);
+          if (!health.ok) throw new Error(`Backend health failed: ${health.status}`);
+          const healthBody = await health.json();
+          if (healthBody.status !== "ok" || healthBody.db !== "up") {
+            throw new Error(`Backend unhealthy: ${JSON.stringify(healthBody)}`);
+          }
+
+          const courses = await fetchWithRetry(
+            `${backend}/api/v1/courses?page=1&limit=12&sort=newest`,
+          );
+          if (!courses.ok) throw new Error(`Courses API failed: ${courses.status}`);
+          const coursesBody = await courses.json();
+          if (!coursesBody.success || !Array.isArray(coursesBody.data)) {
+            throw new Error("Courses API returned an invalid envelope");
+          }
+
+          const htmlResponse = await fetchWithRetry(frontend);
+          if (!htmlResponse.ok) {
+            throw new Error(`Frontend failed: ${htmlResponse.status}`);
+          }
+          const html = await htmlResponse.text();
+          const assetPath = html.match(/src="([^"]*\/assets\/index-[^"]+\.js)"/)?.[1];
+          if (!assetPath) throw new Error("Cannot locate frontend JavaScript bundle");
+
+          const bundleResponse = await fetchWithRetry(new URL(assetPath, frontend));
+          if (!bundleResponse.ok) {
+            throw new Error(`Bundle failed: ${bundleResponse.status}`);
+          }
+          const bundle = await bundleResponse.text();
+          if (bundle.includes("<link-backend-cua-ban>")) {
+            throw new Error("Frontend bundle still contains backend URL placeholder");
+          }
+          if (!bundle.includes("https://learnquiz-api.onrender.com/api/v1")) {
+            throw new Error("Frontend bundle does not contain the production HTTPS API URL");
+          }
+
+          console.log(
+            `Smoke passed; ${coursesBody.data.length} published courses visible`,
+          );
+          NODE

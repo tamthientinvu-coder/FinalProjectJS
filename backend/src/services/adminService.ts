@@ -183,8 +183,8 @@ export async function listUsers(filter: UserFilter) {
  * Thiếu một trong hai là hệ thống có thể rơi vào trạng thái không ai quản trị được.
  *
  * Khi khóa, refreshToken bị xóa để phiên đăng nhập không gia hạn được nữa.
- * Access token đang cầm vẫn sống tối đa 15 phút - đây là đánh đổi có chủ đích
- * của kiến trúc JWT: đổi lấy việc không phải truy vấn CSDL ở mọi request.
+ * Middleware xác thực cũng kiểm tra isActive trong CSDL ở mỗi request bảo vệ,
+ * vì vậy access token đang cầm bị vô hiệu hóa ngay sau thao tác khóa.
  */
 export async function setUserStatus(targetUserId: number, isActive: boolean, actor: Viewer) {
   const target = await prisma.user.findUnique({

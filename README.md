@@ -74,8 +74,8 @@ Mật khẩu chung: **`123456`**
 | `npm run dev` | Chạy server, tự khởi động lại khi sửa code |
 | `npm run build` | Biên dịch TypeScript sang `dist/` |
 | `npm run typecheck` | Kiểm tra kiểu, không xuất file |
-| `npm run seed` | Nạp lại dữ liệu mẫu (chạy nhiều lần được) |
-| `npm test` | Chạy 318 phép kiểm thử — không cần cơ sở dữ liệu |
+| `npm run seed` | Tạo lại dữ liệu mẫu; xóa dữ liệu nghiệp vụ hiện có |
+| `npm test` | Chạy 324 phép kiểm thử — không cần cơ sở dữ liệu |
 | `npm run test:unit` | Chỉ chạy phần kiểm thử hàm thuần (nhanh nhất) |
 | `npx prisma migrate dev --name <tên>` | Tạo migration sau khi sửa `schema.prisma` |
 | `npx prisma studio` | Xem và sửa dữ liệu bằng giao diện web (CSDL cục bộ) |
@@ -86,6 +86,7 @@ Mật khẩu chung: **`123456`**
 |---|---|
 | `npm run dev` | Chạy Vite dev server |
 | `npm run build` | Kiểm tra kiểu rồi build ra `dist/` |
+| `npm test` | Chạy 10 phép kiểm thử Vitest |
 | `npm run preview` | Xem thử bản build |
 
 ---
@@ -97,14 +98,19 @@ Mật khẩu chung: **`123456`**
 - [x] **Sprint 2** — Bài học (soạn, sắp xếp thứ tự) · Đăng ký học · Học theo lộ trình · Tiến độ
 - [x] **Sprint 3** — Quiz: soạn đề, làm bài, server chấm điểm, xem lại đáp án, làm lại · 111 phép kiểm thử
 - [x] **Sprint 4** — Duyệt khóa học · Quản lý người dùng · Thống kê · 253 phép kiểm thử
-- [x] **Sprint 5** — Tích hợp Gemini · Docker · CI/CD · Deploy · 318 phép kiểm thử
+- [x] **Sprint 5** — Tích hợp Gemini · Docker · CI/CD · Deploy · 324 phép kiểm thử
 
 ---
 
 ## Chạy trọn bộ bằng Docker
 
 ```bash
+# Windows PowerShell
+Copy-Item .env.example .env
+# Mở .env và thay hai JWT secret bằng hai chuỗi ngẫu nhiên khác nhau
+
 docker compose -f docker-compose.full.yml up --build
+# Chỉ chạy seed lần đầu trên môi trường demo trống; lệnh này xóa dữ liệu nghiệp vụ hiện có
 docker compose -f docker-compose.full.yml exec backend npm run seed
 ```
 

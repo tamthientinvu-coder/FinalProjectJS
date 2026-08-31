@@ -3,6 +3,8 @@ process.env.DATABASE_URL = "postgresql://x:x@localhost:5432/x";
 process.env.JWT_ACCESS_SECRET = "test_access_secret";
 process.env.JWT_REFRESH_SECRET = "test_refresh_secret";
 process.env.NODE_ENV = "test";
+process.env.GEMINI_API_KEY = "";
+process.env.GEMINI_MODEL = "gemini-test-model";
 
 import fakePrisma, { db } from "./helpers/fakePrisma";
 import { ok, section, report } from "./helpers/assert";
@@ -73,7 +75,8 @@ function seed() {
   db.users.push(
     { id: 1, name: "Quản trị", email: "admin@x.vn", password: "hash", refreshToken: "rt", role: "admin", isActive: true, createdAt: new Date() },
     { id: 2, name: "Giảng viên", email: "gv@x.vn", password: "hash", refreshToken: "rt", role: "instructor", isActive: true, createdAt: new Date() },
-    { id: 4, name: "Học viên", email: "hv@x.vn", password: "hash", refreshToken: "rt", role: "student", isActive: true, createdAt: new Date() }
+    { id: 4, name: "Học viên", email: "hv@x.vn", password: "hash", refreshToken: "rt", role: "student", isActive: true, createdAt: new Date() },
+    { id: 5, name: "Học viên khác", email: "o@x.vn", password: "hash", refreshToken: "rt", role: "student", isActive: true, createdAt: new Date() }
   );
   db.courses.push({ id: 1, title: "JS", instructorId: 2, status: "published" });
   db.courses.push({ id: 2, title: "Khóa chờ duyệt", instructorId: 2, status: "pending", rejectReason: null, publishedAt: null, updatedAt: new Date(), level: "beginner", categoryId: null });
@@ -190,6 +193,21 @@ function request(server: any, method: string, path: string, token?: string, body
 
   const lockStudent = await request(server, "PATCH", "/api/v1/users/4/status", adminToken, { isActive: false });
   ok("quản trị khóa học viên -> 200", lockStudent.status === 200, `nhận ${lockStudent.status}`);
+  const blockedWithOldToken = await request(
+    server,
+    "GET",
+    "/api/v1/enrollments/me",
+    studentToken
+  );
+  ok(
+    "access token cũ bị chặn ngay sau khi khóa tài khoản",
+    blockedWithOldToken.status === 403 &&
+      blockedWithOldToken.raw.includes("Tài khoản đã bị khóa")
+  );
+
+  const lockedStudent = db.users.find((user) => user.id === 4);
+  if (lockedStudent) lockedStudent.isActive = true;
+
 
   const rejectNoReason = await request(server, "PATCH", "/api/v1/courses/2/reject", adminToken, {});
   ok("từ chối KHÔNG kèm lý do -> 400", rejectNoReason.status === 400, `nhận ${rejectNoReason.status}`);

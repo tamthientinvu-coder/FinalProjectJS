@@ -1,6 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
-
-export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
+import { API_URL } from "../config/apiUrl";
+import { RefreshQueue } from "./refreshQueue";
 
 const axiosClient = axios.create({
   baseURL: API_URL,
@@ -19,7 +19,7 @@ axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // --- Response: gặp 401 thì tự refresh token 1 lần rồi gọi lại request cũ ---
 let isRefreshing = false;
-let queue: ((token: string) => void)[] = [];
+const refreshQueue = new RefreshQueue();
 
 axiosClient.interceptors.response.use(
   (response) => response,
@@ -32,11 +32,9 @@ axiosClient.interceptors.response.use(
 
     // Đang refresh rồi -> xếp hàng đợi, tránh gọi /auth/refresh nhiều lần cùng lúc
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        queue.push((token: string) => {
-          original.headers.Authorization = `Bearer ${token}`;
-          resolve(axiosClient(original));
-        });
+      return refreshQueue.wait(async (token) => {
+        original.headers.Authorization = `Bearer ${token}`;
+        return axiosClient(original);
       });
     }
 
@@ -53,17 +51,17 @@ axiosClient.interceptors.response.use(
       localStorage.setItem("accessToken", newAccess);
       localStorage.setItem("refreshToken", newRefresh);
 
-      queue.forEach((cb) => cb(newAccess));
+      refreshQueue.flush(newAccess);
       original.headers.Authorization = `Bearer ${newAccess}`;
       return axiosClient(original);
     } catch (e) {
+      refreshQueue.fail(e);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       window.location.href = "/login";
       return Promise.reject(e);
     } finally {
       isRefreshing = false;
-      queue = [];
     }
   }
 );

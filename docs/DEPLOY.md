@@ -17,7 +17,7 @@
 >
 > Trang Info của `learnquiz-db` trên Render Dashboard ghi rõ: *"Your database will expire on **27/09/2026**. The database will be deleted unless you upgrade to a paid compute plan."* — đây **không phải** hiện tượng "ngủ" tạm thời như web service Free, mà là **xoá vĩnh viễn toàn bộ dữ liệu** đúng ~30 ngày sau khi tạo, trừ khi nâng cấp lên gói trả phí.
 >
-> **Cha kiểm tra ngay:** nếu ngày bảo vệ đồ án rơi **sau 27/09/2026**, hệ thống sẽ sập hoàn toàn (báo lỗi kết nối CSDL) nếu không xử lý trước. Ba lựa chọn, làm một trong ba **trước ngày hết hạn**:
+> **Bạn cần kiểm tra ngay:** nếu ngày bảo vệ đồ án rơi **sau 27/09/2026**, hệ thống sẽ sập hoàn toàn (báo lỗi kết nối CSDL) nếu không xử lý trước. Ba lựa chọn, làm một trong ba **trước ngày hết hạn**:
 >
 > 1. **Nâng cấp `learnquiz-db` lên gói trả phí thấp nhất của Render** (Dashboard → `learnquiz-db` → banner cảnh báo → *"upgrade to a paid compute plan"*) — dữ liệu giữ nguyên, không gián đoạn, nhưng bắt đầu tốn phí hàng tháng.
 > 2. **Tạo CSDL Free mới ngay trước ngày bảo vệ** (vài ngày trước là đủ) rồi trỏ `DATABASE_URL` trên `learnquiz-api` sang CSDL mới, chạy lại migrate + seed — miễn phí nhưng phải nhớ làm lại đúng lịch mỗi ~30 ngày.
@@ -31,7 +31,7 @@
 >
 > **Đã sửa trong repo:** giá trị mặc định đổi sang `gemini-3.6-flash` (model thay thế do chính Google khuyến nghị) tại `backend/src/config/env.ts`, `backend/.env.example`, `docker-compose.full.yml` và `render.yaml`.
 >
-> **Cha vẫn phải tự làm thêm một bước thủ công:** sửa `render.yaml` **không** tự đồng bộ vào biến môi trường của service đã tồn tại trên Render — chỉ áp dụng cho service tạo mới từ Blueprint. Vào **Render Dashboard → `learnquiz-api` → Environment**, sửa `GEMINI_MODEL` từ `gemini-2.0-flash` thành `gemini-3.6-flash`, bấm **Save Changes** (Render tự deploy lại). Kiểm tra lại bằng cách gọi thử một trong ba tính năng AI (ví dụ bấm "Vì sao sai?" ở một câu quiz làm sai) và xác nhận không còn lỗi.
+> **Bạn vẫn phải tự làm thêm một bước thủ công:** sửa `render.yaml` **không** tự đồng bộ vào biến môi trường của service đã tồn tại trên Render — chỉ áp dụng cho service tạo mới từ Blueprint. Vào **Render Dashboard → `learnquiz-api` → Environment**, sửa `GEMINI_MODEL` từ `gemini-2.0-flash` thành `gemini-3.6-flash`, bấm **Save Changes** (Render tự deploy lại). Kiểm tra lại bằng cách gọi thử một trong ba tính năng AI (ví dụ bấm "Vì sao sai?" ở một câu quiz làm sai) và xác nhận không còn lỗi.
 
 ---
 
@@ -140,10 +140,9 @@ Dự án đã có sẵn `render.yaml` ở thư mục gốc, khai báo đủ cả
    - `GEMINI_API_KEY` — dán key vừa lấy ở Bước 2
    *(Các biến còn lại như `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` có `generateValue: true` nên Render tự sinh chuỗi ngẫu nhiên, không cần điền.)*
 8. Bấm **Apply**
-9. Render chuyển sang màn hình build log — chờ khoảng **3–5 phút**. Bốn việc diễn ra tuần tự, theo dõi được trong log:
+9. Render chuyển sang màn hình build log — chờ khoảng **3–5 phút**. Ba việc diễn ra tuần tự, theo dõi được trong log:
    - Tạo PostgreSQL (trạng thái chuyển từ *Creating* → *Available*)
-   - `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build` cho web service — cờ `--include=dev` bắt buộc phải có vì lệnh `npm run seed` chạy bằng `ts-node`, nằm trong `devDependencies` mà Render mặc định bỏ qua ở môi trường production
-   - Nạp dữ liệu mẫu (`npm run seed`) — script này **tự xoá dữ liệu khoá học/quiz cũ rồi tạo lại từ đầu**, còn tài khoản thì `upsert` (giữ nguyên nếu đã tồn tại) — xem thêm mục "Nạp dữ liệu mẫu" bên dưới
+   - `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build` cho web service
    - Container khởi động, Render tự gọi `healthCheckPath: /health` để xác nhận service sống
 10. Khi cả hai thẻ tài nguyên chuyển sang chấm tròn **xanh lá**, việc dựng hạ tầng đã xong
 
@@ -187,7 +186,7 @@ Dùng khi muốn kiểm soát từng biến, hoặc khi `render.yaml` không áp
 | Branch | `main` |
 | Root Directory | `backend` |
 | Runtime | Node |
-| Build Command | `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build` |
+| Build Command | `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build` |
 | Start Command | `node dist/index.js` |
 | Plan | Free |
 
@@ -217,17 +216,25 @@ Build chạy **một lần mỗi lần deploy**. Start chạy **mỗi lần cont
 
 Lưu ý: dùng `migrate deploy` chứ **không** dùng `migrate dev`. `migrate dev` có thể xoá và tạo lại cơ sở dữ liệu — tuyệt đối không đưa vào production.
 
-### Nạp dữ liệu mẫu — hiện đã **tự động chạy mỗi lần deploy**
+### Nạp dữ liệu mẫu — chỉ chạy thủ công khi khởi tạo môi trường demo
 
-`render.yaml` đã có `npm run seed` ngay trong `buildCommand`, nên **không cần vào Shell chạy tay** như trước nữa — cứ mỗi lần đẩy commit mới lên `main` (Render tự deploy lại), dữ liệu mẫu tự nạp lại.
+`render.yaml` **không chạy `npm run seed` trong `buildCommand`**. Điều này bảo đảm deploy mã nguồn hoặc migration mới không xóa dữ liệu khóa học, quiz, lượt đăng ký và bài nộp đang có.
 
-Script `prisma/seed.ts` viết theo nguyên tắc **idempotent** (chạy lại nhiều lần không lỗi):
-- **Tài khoản** (`admin@learnquiz.vn`, `instructor@learnquiz.vn`, …) dùng `upsert` — đã tồn tại thì giữ nguyên, không tạo trùng.
-- **Khoá học, bài học, quiz, lượt đăng ký, bài nộp** bị **xoá sạch rồi tạo lại từ đầu** mỗi lần seed chạy.
+Render Free không cung cấp Shell/SSH cho web service. Ở lần triển khai đầu tiên, chạy seed từ máy cá nhân qua **External Database URL**:
 
-**Hệ quả cần biết:** nếu trong lúc demo có tạo khoá học mới hay nộp quiz thật, dữ liệu đó **sẽ mất** ở lần deploy kế tiếp (mỗi lần push code lên `main`). Đây là đánh đổi hợp lý cho một hệ thống demo — luôn có dữ liệu mẫu sạch để trình bày — nhưng không phù hợp nếu sau này đưa vào dùng thật với người dùng thật.
+1. Mở Render Dashboard → database `learnquiz-db` → **Connections** → copy **External Database URL**.
+2. Tại thư mục `backend/`, tạo file `.env.production.local` (file này đã được gitignore) với đúng một dòng:
 
-Nếu cần seed lại thủ công mà không muốn deploy lại (ví dụ nghi dữ liệu bị lỗi giữa chừng): Dashboard Render → mở service `learnquiz-api` → tab **Shell** → gõ `npm run seed`.
+   ```env
+   DATABASE_URL="<External Database URL>?sslmode=require"
+   ```
+
+3. Chạy `npm ci`, sau đó chạy `npm run seed:prod` đúng một lần.
+4. Xóa nội dung clipboard chứa URL và giữ file env ngoài git. Kiểm tra đăng nhập bằng tài khoản demo.
+
+> **Cảnh báo:** `prisma/seed.ts` có chủ đích xóa sạch khóa học, bài học, quiz, lượt đăng ký và bài nộp trước khi tạo lại dữ liệu mẫu. Chỉ chạy `npm run seed:prod` khi chấp nhận mất các dữ liệu đó. Không thêm lại lệnh seed vào Build Command hoặc Start Command.
+
+Nếu môi trường đã có dữ liệu thật, không chạy seed. Chỉ để `npx prisma migrate deploy` áp dụng migration an toàn trong quá trình build.
 
 ### Kiểm tra
 
@@ -368,11 +375,13 @@ docker compose -f docker-compose.full.yml down
 
 | Job | Nội dung |
 |---|---|
-| **backend** | `prisma validate` → `typecheck` → `npm test` (318 phép kiểm) → `build` |
-| **frontend** | `typecheck` → `build` production |
+| **backend** | `prisma validate` → `typecheck` → `npm test` (324 phép kiểm) → `build` |
+| **frontend** | `npm test` (10 phép kiểm) → `typecheck` → `build` production |
 | **security** | Chặn nếu `.env` từng bị commit · `npm audit` cả hai dự án |
 
 Bộ kiểm thử dùng Prisma giả lập trong bộ nhớ nên **CI không cần dựng cơ sở dữ liệu thật** — chạy xong trong khoảng một phút. Nếu một job báo đỏ (❌) trên GitHub, bấm vào job đó để xem log chi tiết trước khi push tiếp.
+
+.github/workflows/production-smoke.yml chạy thủ công hoặc mỗi 6 giờ để kiểm tra health/database, API khóa học và bảo đảm bundle Vercel chứa đúng URL backend production.
 
 ---
 
@@ -424,7 +433,7 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 **Chất lượng mã**
 
 - [ ] `npm run build` sạch lỗi ở cả hai dự án
-- [ ] `npm test` đạt 100% (318/318)
+- [ ] Backend `npm test` đạt 324/324 và frontend `npm test` đạt 10/10
 - [ ] Không còn `console.log` rải rác
 - [ ] Mọi route async đều `try/catch` + `next(err)`
 
@@ -453,8 +462,8 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 | Frontend vẫn gọi `localhost:3000` dù đã sửa `VITE_API_URL` | Đổi biến nhưng chưa Redeploy | Vercel → Deployments → **⋯** → **Redeploy**, không phải chỉ chờ hay restart |
 | Build Render báo lỗi `prisma generate` không tìm thấy engine | Thiếu bước `npx prisma generate` trong Build Command, hoặc cache Render cũ | Xoá cache: Render → Settings → **Clear build cache & deploy** |
 | Deploy Vercel báo `Root Directory` không tìm thấy `package.json` | Chưa đổi Root Directory thành `frontend` | Vercel → Settings → General → **Root Directory** → sửa thành `frontend` → Save → Redeploy |
-| Build báo lỗi thiếu `ts-node` khi chạy `npm run seed` | Build Command thiếu cờ `--include=dev` — Render mặc định bỏ `devDependencies` ở production | Sửa Build Command thành `npm ci --include=dev && …` như Bước 3 |
-| Sau khi deploy lại, khoá học/quiz vừa demo biến mất | `npm run seed` tự chạy lại mỗi lần deploy, luôn xoá và tạo lại dữ liệu khoá học | Đây là hành vi **cố ý** của `render.yaml` hiện tại, không phải lỗi — xem mục "Nạp dữ liệu mẫu" ở Bước 3 |
+| Cần dữ liệu demo nhưng hệ thống đang trống | Seed chưa được chạy ở lần khởi tạo môi trường | Từ máy cá nhân, cấu hình `backend/.env.production.local` bằng External Database URL rồi chạy `npm run seed:prod` đúng một lần |
+| Dữ liệu biến mất sau khi chạy seed thủ công | `prisma/seed.ts` xóa dữ liệu nghiệp vụ trước khi tạo lại mẫu | Khôi phục từ backup nếu có; không chạy seed trên môi trường đã có dữ liệu cần giữ |
 
 ---
 
@@ -501,7 +510,7 @@ Không phải một gói cần cài, mà là cấu hình thông báo có sẵn �
 | **Render** | Tự gửi email khi build hoặc deploy thất bại, gửi tới email tài khoản | Render Dashboard → góc trên phải, avatar → **Account Settings** → **Notifications** |
 | **Vercel** | Tự gửi email khi deploy production thất bại | Vercel Dashboard → avatar → **Settings** → **Notifications** — có thể bật thêm **Deployment Summary** (tóm tắt mỗi lần deploy) hoặc nối **Slack/Discord** qua mục **Integrations** nếu muốn nhận vào kênh chat thay vì email |
 
-Vì đây là cài đặt theo tài khoản (yêu cầu đăng nhập), cha cần vào hai trang trên và bật tay một lần — không có API hay tệp cấu hình nào trong repo điều khiển được việc này.
+Vì đây là cài đặt theo tài khoản (yêu cầu đăng nhập), bạn cần vào hai trang trên và bật tay một lần — không có API hay tệp cấu hình nào trong repo điều khiển được việc này.
 
 ---
 
@@ -526,7 +535,7 @@ Tự mở `http://localhost:5555`, đọc `DATABASE_URL` sẵn có trong `backen
 npm run studio:prod
 ```
 
-Lệnh này đọc biến từ tệp `backend/.env.production.local` — **tệp này cha tự tạo, không có sẵn trong repo và không bao giờ lên git** (đã nằm trong mẫu `.env.*.local` của `.gitignore`). Các bước một lần:
+Lệnh này đọc biến từ tệp `backend/.env.production.local` — **tệp này bạn tự tạo, không có sẵn trong repo và không bao giờ lên git** (đã nằm trong mẫu `.env.*.local` của `.gitignore`). Các bước một lần:
 
 1. Render Dashboard → database `learnquiz-db` → tab **Connections**
 2. Copy chuỗi **External Database URL** (khác với Internal Database URL dùng ở Bước 3 — External mới kết nối được từ ngoài mạng Render, tức là từ máy cá nhân)

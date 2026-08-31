@@ -17,6 +17,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Link as RouterLink } from "react-router-dom";
 import { enrollmentApi } from "../api/enrollmentApi";
 import { handleApiError } from "../utils/handleApiError";
+import { formatQuizScore } from "../utils/formatQuizScore";
 import { LEVEL_LABEL } from "../types/course";
 import type { EnrollmentWithProgress } from "../types/lesson";
 
@@ -104,6 +105,9 @@ export default function MyCoursesPage() {
                   color={item.progressPercent === 100 ? "success" : "primary"}
                   sx={{ height: 8, borderRadius: 4 }}
                 />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Trung bình điểm cao nhất mỗi quiz: {formatQuizScore(item.averageQuizScore)}
+                </Typography>
               </CardContent>
 
               <CardActions sx={{ px: 2, pb: 2 }}>

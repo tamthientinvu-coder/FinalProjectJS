@@ -12,14 +12,7 @@ const courseInclude = {
   _count: { select: { lessons: true, enrollments: true } },
 };
 
-/**
- * Đăng ký học một khóa miễn phí.
- *
- * Ba điều kiện, kiểm tra theo đúng thứ tự này để thông báo lỗi sát nghĩa nhất:
- *   1. khóa học phải đã được duyệt (published),
- *   2. không phải khóa do chính mình dạy,
- *   3. chưa đăng ký trước đó.
- */
+/** Đăng ký học một khóa miễn phí. */
 export async function enroll(courseId: number, viewer: Viewer) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
@@ -42,9 +35,6 @@ export async function enroll(courseId: number, viewer: Viewer) {
     throw new AppError(409, "Bạn đã đăng ký khóa học này rồi");
   }
 
-  // Ràng buộc @@unique([studentId, courseId]) là lưới an toàn cuối cùng:
-  // nếu người dùng bấm hai lần thật nhanh, request thứ hai sẽ dính P2002
-  // và errorHandler tự chuyển thành HTTP 409.
   return prisma.enrollment.create({
     data: { studentId: viewer.id, courseId },
     include: { course: { include: courseInclude } },
@@ -52,32 +42,62 @@ export async function enroll(courseId: number, viewer: Viewer) {
 }
 
 /**
- * Khóa học tôi đã đăng ký, kèm phần trăm tiến độ.
- *
- * Lấy sẵn danh sách bài đã hoàn thành trong CÙNG một truy vấn (include)
- * thay vì lặp từng khóa rồi gọi count - tránh vấn đề N+1 query.
+ * Khóa học tôi đã đăng ký, kèm phần trăm tiến độ và điểm tốt nhất trung bình
+ * của từng quiz. Mỗi quiz có trọng số như nhau dù học viên làm lại nhiều lần.
  */
 export async function listMine(viewer: Viewer) {
-  const enrollments = await prisma.enrollment.findMany({
-    where: { studentId: viewer.id },
-    orderBy: { enrolledAt: "desc" },
-    include: {
-      course: { include: courseInclude },
-      progresses: { where: { isCompleted: true }, select: { lessonId: true } },
-    },
-  });
+  const [enrollments, submissions] = await prisma.$transaction([
+    prisma.enrollment.findMany({
+      where: { studentId: viewer.id },
+      orderBy: { enrolledAt: "desc" },
+      include: {
+        course: { include: courseInclude },
+        progresses: { where: { isCompleted: true }, select: { lessonId: true } },
+      },
+    }),
+    prisma.quizSubmission.findMany({
+      where: { studentId: viewer.id },
+      select: {
+        quizId: true,
+        score: true,
+        quiz: { select: { lesson: { select: { courseId: true } } } },
+      },
+    }),
+  ]);
 
-  return enrollments.map((e) => {
-    const total = e.course._count.lessons;
-    const completed = e.progresses.length;
+  const bestByCourseAndQuiz = new Map<string, { courseId: number; score: number }>();
+  for (const submission of submissions) {
+    const courseId = submission.quiz.lesson.courseId;
+    const key = `${courseId}:${submission.quizId}`;
+    const previous = bestByCourseAndQuiz.get(key);
+    if (!previous || submission.score > previous.score) {
+      bestByCourseAndQuiz.set(key, { courseId, score: submission.score });
+    }
+  }
+
+  const scoresByCourse = new Map<number, number[]>();
+  for (const { courseId, score } of bestByCourseAndQuiz.values()) {
+    const scores = scoresByCourse.get(courseId) ?? [];
+    scores.push(score);
+    scoresByCourse.set(courseId, scores);
+  }
+
+  return enrollments.map((enrollment) => {
+    const total = enrollment.course._count.lessons;
+    const completed = enrollment.progresses.length;
+    const scores = scoresByCourse.get(enrollment.courseId) ?? [];
+
     return {
-      id: e.id,
-      enrolledAt: e.enrolledAt,
-      course: e.course,
+      id: enrollment.id,
+      enrolledAt: enrollment.enrolledAt,
+      course: enrollment.course,
       completedLessons: completed,
       totalLessons: total,
-      // Khóa chưa có bài học nào thì coi như 0%, tránh chia cho 0
       progressPercent: total === 0 ? 0 : Math.round((completed / total) * 100),
+      averageQuizScore:
+        scores.length === 0
+          ? null
+          : Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length),
     };
   });
 }

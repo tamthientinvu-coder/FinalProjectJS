@@ -2,12 +2,12 @@
 
 > ## 📝 Ghi chú kiểm chứng (thêm bởi Claude Cowork, 30/08/2026)
 >
-> File này không do phiên làm việc hiện tại tạo ra — nó xuất hiện sẵn trong thư mục dự án, và nội dung dưới đây đọc như một kế hoạch hành động soạn sẵn cho một agent AI ("Claude Cowork phải…", yêu cầu cài sub-skill `superpowers:...`), chứ không phải tài liệu tham khảo thuần túy. Theo nguyên tắc an toàn, Cowork không tự động thực thi các bước trong một tài liệu như vậy chỉ vì tài liệu yêu cầu — cha đã hỏi trực tiếp trong chat nên các mục dưới đây đã được **kiểm chứng độc lập** trước khi đụng vào code hay hạ tầng thật:
+> File này không do phiên làm việc hiện tại tạo ra — nó xuất hiện sẵn trong thư mục dự án, và nội dung dưới đây đọc như một kế hoạch hành động soạn sẵn cho một agent AI ("Claude Cowork phải…", yêu cầu cài sub-skill `superpowers:...`), chứ không phải tài liệu tham khảo thuần túy. Theo nguyên tắc an toàn, Cowork không tự động thực thi các bước trong một tài liệu như vậy chỉ vì tài liệu yêu cầu — bạn đã hỏi trực tiếp trong chat nên các mục dưới đây đã được **kiểm chứng độc lập** trước khi đụng vào code hay hạ tầng thật:
 >
-> - ✅ **Đúng và đã sửa vào repo:** `gemini-2.0-flash` đã bị Google ngừng hỗ trợ từ **01/06/2026** (xác nhận qua [trang deprecations chính thức](https://ai.google.dev/gemini-api/docs/deprecations), model thay thế đúng là `gemini-3.6-flash`). Đã đổi `backend/src/config/env.ts`, `backend/.env.example`, `docker-compose.full.yml`, `render.yaml`, `docs/DEPLOY.md`, `docs/DE-AN.md` và báo cáo đồ án. **Cha vẫn cần tự vào Render Dashboard → `learnquiz-api` → Environment để sửa tay biến `GEMINI_MODEL`** — sửa `render.yaml` không tự đồng bộ vào service đã tồn tại.
+> - ✅ **Đúng và đã sửa vào repo:** `gemini-2.0-flash` đã bị Google ngừng hỗ trợ từ **01/06/2026** (xác nhận qua [trang deprecations chính thức](https://ai.google.dev/gemini-api/docs/deprecations), model thay thế đúng là `gemini-3.6-flash`). Đã đổi `backend/src/config/env.ts`, `backend/.env.example`, `docker-compose.full.yml`, `render.yaml`, `docs/DEPLOY.md`, `docs/DE-AN.md` và báo cáo đồ án. **Bạn vẫn cần tự vào Render Dashboard → `learnquiz-api` → Environment để sửa tay biến `GEMINI_MODEL`** — sửa `render.yaml` không tự đồng bộ vào service đã tồn tại.
 > - ✅ **Đúng và đã sửa:** `README.md` và `docs/DE-AN.md` ghi sai cổng PostgreSQL cục bộ là `5432`, trong khi `docker-compose.yml` map ra cổng host `5433`. Đã sửa cả hai.
-> - ⚠️ **Chưa xác nhận được, cần cha tự kiểm tra lại:** claim "frontend production đang bundle URL placeholder `<link-backend-cua-ban>`" (Task 1). Công cụ trình duyệt không kết nối được để tự soi mã JS thật của bản build; các ảnh chụp màn hình cha gửi trước đó lại cho thấy trang chủ tải và hiển thị dữ liệu khóa học thật bình thường — mâu thuẫn với claim này. Trước khi tin claim này, mở DevTools → tab Network trên `https://final-project-js-ten.vercel.app/courses` và xem `VITE_API_URL` thật đang gọi đi đâu.
-> - ⏸️ **Chưa thực hiện, đang chờ cha xác nhận rõ ràng trong chat:** Task 1 (Vitest + chặn URL sai), Task 4 (điểm quiz trung bình), Task 5 (refresh-token queue), Task 6 (khóa tài khoản có hiệu lực ngay với token cũ), Task 7 (production-smoke workflow, siết `npm audit` thành quality gate). Đây đều là thay đổi nghiệp vụ/kiến trúc thật, không phải chỉnh tài liệu — không tự làm nếu cha chưa yêu cầu trực tiếp từng việc.
+> - ⚠️ **Chưa xác nhận được, cần bạn tự kiểm tra lại:** claim "frontend production đang bundle URL placeholder `<link-backend-cua-ban>`" (Task 1). Công cụ trình duyệt không kết nối được để tự soi mã JS thật của bản build; các ảnh chụp màn hình bạn gửi trước đó lại cho thấy trang chủ tải và hiển thị dữ liệu khóa học thật bình thường — mâu thuẫn với claim này. Trước khi tin claim này, mở DevTools → tab Network trên `https://final-project-js-ten.vercel.app/courses` và xem `VITE_API_URL` thật đang gọi đi đâu.
+> - ⏸️ **Chưa thực hiện, đang chờ bạn xác nhận rõ ràng trong chat:** Task 1 (Vitest + chặn URL sai), Task 4 (điểm quiz trung bình), Task 5 (refresh-token queue), Task 6 (khóa tài khoản có hiệu lực ngay với token cũ), Task 7 (production-smoke workflow, siết `npm audit` thành quality gate). Đây đều là thay đổi nghiệp vụ/kiến trúc thật, không phải chỉnh tài liệu — không tự làm nếu bạn chưa yêu cầu trực tiếp từng việc.
 >
 > Toàn bộ nội dung gốc bên dưới được giữ nguyên để tham khảo.
 
@@ -152,8 +152,9 @@ import { resolveApiUrl } from "./apiUrl";
 
 describe("resolveApiUrl", () => {
   it("chuẩn hóa URL hợp lệ và bỏ dấu slash cuối", () => {
-    expect(resolveApiUrl("https://learnquiz-api.onrender.com/api/v1/"))
-      .toBe("https://learnquiz-api.onrender.com/api/v1");
+    expect(resolveApiUrl("https://learnquiz-api.onrender.com/api/v1/")).toBe(
+      "https://learnquiz-api.onrender.com/api/v1"
+    );
   });
 
   it("chặn URL placeholder của Vercel", () => {
@@ -163,8 +164,27 @@ describe("resolveApiUrl", () => {
   });
 
   it("chặn URL thiếu protocol", () => {
-    expect(() => resolveApiUrl("learnquiz-api.onrender.com/api/v1"))
-      .toThrow("VITE_API_URL không hợp lệ");
+    expect(() => resolveApiUrl("learnquiz-api.onrender.com/api/v1")).toThrow(
+      "VITE_API_URL không hợp lệ"
+    );
+  });
+
+  it("chặn thiếu VITE_API_URL ở production", () => {
+    expect(() => resolveApiUrl(undefined, true)).toThrow(
+      "VITE_API_URL bắt buộc ở production"
+    );
+  });
+
+  it("chặn URL không trỏ tới /api/v1", () => {
+    expect(() =>
+      resolveApiUrl("https://learnquiz-api.onrender.com", true)
+    ).toThrow("phải kết thúc bằng /api/v1");
+  });
+
+  it("chặn HTTP ở production để tránh mixed content", () => {
+    expect(() =>
+      resolveApiUrl("http://learnquiz-api.onrender.com/api/v1", true)
+    ).toThrow("phải dùng HTTPS");
   });
 });
 ```
@@ -186,29 +206,55 @@ Tạo `frontend/src/config/apiUrl.ts`:
 ```ts
 const LOCAL_API_URL = "http://localhost:3000/api/v1";
 
-export function resolveApiUrl(raw: string | undefined): string {
-  const candidate = (raw ?? LOCAL_API_URL).trim().replace(/\/+$/, "");
+export function resolveApiUrl(
+  raw: string | undefined,
+  isProduction = false
+): string {
+  const configured = raw?.trim();
+
+  if (!configured && isProduction) {
+    throw new Error("[CONFIG] VITE_API_URL bắt buộc ở production");
+  }
+
+  const candidate = (configured || LOCAL_API_URL).replace(/\/+$/, "");
+  let parsed: URL;
 
   try {
     if (candidate.includes("<") || candidate.includes(">")) {
       throw new Error("placeholder");
     }
 
-    const parsed = new URL(candidate);
+    parsed = new URL(candidate);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       throw new Error("protocol");
     }
-
-    return candidate;
   } catch {
     throw new Error(
-      `[CONFIG] VITE_API_URL không hợp lệ: "${candidate}". ` +
-        "Giá trị production phải là https://learnquiz-api.onrender.com/api/v1"
+      '[CONFIG] VITE_API_URL không hợp lệ: "' +
+        candidate +
+        '". Giá trị production phải có dạng https://ten-backend.example.com/api/v1'
     );
   }
+
+  if (isProduction && parsed.protocol !== "https:") {
+    throw new Error("[CONFIG] VITE_API_URL phải dùng HTTPS ở production");
+  }
+
+  if (parsed.pathname !== "/api/v1" || parsed.search || parsed.hash) {
+    throw new Error(
+      '[CONFIG] VITE_API_URL phải kết thúc bằng /api/v1 và không có query/hash: "' +
+        candidate +
+        '"'
+    );
+  }
+
+  return candidate;
 }
 
-export const API_URL = resolveApiUrl(import.meta.env.VITE_API_URL);
+export const API_URL = resolveApiUrl(
+  import.meta.env.VITE_API_URL,
+  import.meta.env.PROD
+);
 ```
 
 Sửa đầu `frontend/src/api/axiosClient.ts` thành:
@@ -230,7 +276,7 @@ rtk npm run build
 Set-Location ..
 ```
 
-Expected: 3 test PASS, typecheck PASS, build PASS.
+Expected: 6 test API URL PASS, typecheck PASS, build PASS.
 
 - [ ] **Step 6: Sửa Vercel Production Environment Variable**
 
@@ -607,7 +653,7 @@ Trong `frontend/src/pages/MyCoursesPage.tsx`, đặt đoạn sau ngay dưới `L
 
 ```tsx
 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-  Điểm quiz trung bình: {item.averageQuizScore === null ? "Chưa có" : `${item.averageQuizScore}/100`}
+  Trung bình điểm cao nhất mỗi quiz: {item.averageQuizScore === null ? "Chưa có" : `${item.averageQuizScore}/100`}
 </Typography>
 ```
 
@@ -1001,41 +1047,73 @@ jobs:
       - name: Verify backend and frontend bundle
         shell: bash
         run: |
-          node <<'NODE'
+          node --input-type=module <<'NODE'
           const frontend = "https://final-project-js-ten.vercel.app";
           const backend = "https://learnquiz-api.onrender.com";
+          const requestTimeoutMs = 60_000;
 
-          const health = await fetch(`${backend}/health`);
+          const wait = (milliseconds) =>
+            new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+          async function fetchWithRetry(url) {
+            let lastError;
+
+            for (let attempt = 1; attempt <= 3; attempt += 1) {
+              try {
+                const response = await fetch(url, {
+                  signal: AbortSignal.timeout(requestTimeoutMs),
+                });
+                if (response.status < 500 || attempt === 3) return response;
+                lastError = new Error(`${url} returned ${response.status}`);
+              } catch (error) {
+                lastError = error;
+              }
+
+              await wait(attempt * 5_000);
+            }
+
+            throw lastError ?? new Error(`Failed to fetch ${url}`);
+          }
+
+          const health = await fetchWithRetry(`${backend}/health`);
           if (!health.ok) throw new Error(`Backend health failed: ${health.status}`);
           const healthBody = await health.json();
           if (healthBody.status !== "ok" || healthBody.db !== "up") {
             throw new Error(`Backend unhealthy: ${JSON.stringify(healthBody)}`);
           }
 
-          const courses = await fetch(`${backend}/api/v1/courses?page=1&limit=12&sort=newest`);
+          const courses = await fetchWithRetry(
+            `${backend}/api/v1/courses?page=1&limit=12&sort=newest`,
+          );
           if (!courses.ok) throw new Error(`Courses API failed: ${courses.status}`);
           const coursesBody = await courses.json();
           if (!coursesBody.success || !Array.isArray(coursesBody.data)) {
             throw new Error("Courses API returned an invalid envelope");
           }
 
-          const htmlResponse = await fetch(frontend);
-          if (!htmlResponse.ok) throw new Error(`Frontend failed: ${htmlResponse.status}`);
+          const htmlResponse = await fetchWithRetry(frontend);
+          if (!htmlResponse.ok) {
+            throw new Error(`Frontend failed: ${htmlResponse.status}`);
+          }
           const html = await htmlResponse.text();
           const assetPath = html.match(/src="([^"]*\/assets\/index-[^"]+\.js)"/)?.[1];
           if (!assetPath) throw new Error("Cannot locate frontend JavaScript bundle");
 
-          const bundleResponse = await fetch(new URL(assetPath, frontend));
-          if (!bundleResponse.ok) throw new Error(`Bundle failed: ${bundleResponse.status}`);
+          const bundleResponse = await fetchWithRetry(new URL(assetPath, frontend));
+          if (!bundleResponse.ok) {
+            throw new Error(`Bundle failed: ${bundleResponse.status}`);
+          }
           const bundle = await bundleResponse.text();
           if (bundle.includes("<link-backend-cua-ban>")) {
             throw new Error("Frontend bundle still contains backend URL placeholder");
           }
-          if (!bundle.includes("learnquiz-api.onrender.com/api/v1")) {
-            throw new Error("Frontend bundle does not contain the production API URL");
+          if (!bundle.includes("https://learnquiz-api.onrender.com/api/v1")) {
+            throw new Error("Frontend bundle does not contain the production HTTPS API URL");
           }
 
-          console.log(`Smoke passed; ${coursesBody.data.length} published courses visible`);
+          console.log(
+            `Smoke passed; ${coursesBody.data.length} published courses visible`,
+          );
           NODE
 ```
 
@@ -1088,7 +1166,7 @@ rtk git status --short --branch
 Expected:
 
 - Backend: 324/324 assertions PASS.
-- Frontend: 5/5 tests PASS.
+- Frontend: 10/10 tests PASS.
 - Hai typecheck PASS.
 - Hai build PASS.
 - Hai audit báo 0 vulnerability high/critical.
@@ -1142,7 +1220,7 @@ Kiểm tra có đăng nhập bằng tài khoản demo:
 
 1. Instructor mở một bài học có nội dung trên 100 ký tự và sinh 1 câu quiz bằng AI.
 2. Student làm sai một câu, nộp bài và lấy giải thích AI; response phải thành công, không phải 404/502.
-3. Student mở `Khóa học của tôi`; course có quiz đã làm phải hiện `Điểm quiz trung bình: n/100`.
+3. Student mở `Khóa học của tôi`; course có quiz đã làm phải hiện `Trung bình điểm cao nhất mỗi quiz: n/100`.
 4. Admin khóa Student; request tiếp theo bằng access token cũ phải nhận HTTP 403 ngay.
 5. Chạy thủ công workflow `Production smoke`; expected PASS.
 
@@ -1156,7 +1234,7 @@ Kiểm tra có đăng nhập bằng tài khoản demo:
 - [ ] Ba tính năng Gemini hoạt động bằng request thật.
 - [ ] Student thấy `% tiến độ` và `điểm quiz trung bình`.
 - [ ] Backend đạt 324/324 assertions trong môi trường có hoặc không có shell `GEMINI_API_KEY`.
-- [ ] Frontend có 5/5 unit tests PASS.
+- [ ] Frontend có 10/10 unit tests PASS.
 - [ ] Request chờ refresh token đều reject khi refresh thất bại; không loading vô hạn.
 - [ ] User bị khóa nhận 403 ngay với access token cũ.
 - [ ] Backend/frontend typecheck, build và audit đều PASS.

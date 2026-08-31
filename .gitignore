@@ -19,3 +19,4 @@ Thumbs.db
 # Prisma
 backend/prisma/*.db
 .gstack/
+frontend/tsconfig.tsbuildinfo

@@ -30,8 +30,8 @@ services:
       PORT: 3000
       # Trong mạng nội bộ của Docker, host của CSDL là tên service "db"
       DATABASE_URL: postgresql://postgres:postgres@db:5432/learnquiz_db?schema=public
-      JWT_ACCESS_SECRET: 9317e640e6b1e4041e75afc3cbe0451bd80714a6eda3088acf6739596a99e432
-      JWT_REFRESH_SECRET: f6458f201a476ad459e065ca66c63ce2306003bece8a96eb99a7e1ad325aca9b
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in the root .env file}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env file}
       FE_URL: http://localhost:8080
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}

@@ -59,6 +59,7 @@ export interface EnrollmentWithProgress {
   completedLessons: number;
   totalLessons: number;
   progressPercent: number;
+  averageQuizScore: number | null;
 }
 
 export interface LessonPayload {

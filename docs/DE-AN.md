@@ -19,7 +19,7 @@
 
 LearnQuiz là nền tảng học trực tuyến quy mô nhỏ theo mô hình **ba vai trò**: giảng viên soạn khóa học gồm nhiều bài học kèm quiz trắc nghiệm, quản trị viên duyệt khóa học trước khi công khai, học viên đăng ký học, làm quiz và theo dõi tiến độ. Hệ thống được xây dựng theo kiến trúc **client–server tách rời**, giao tiếp qua **RESTful API** có phiên bản (`/api/v1`), xác thực bằng **JWT hai token**, và triển khai lên hạ tầng cloud (Vercel + Render).
 
-Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, hợp đồng API và toàn bộ quá trình thực hiện qua sáu sprint — **tất cả đã hoàn tất**: nghiệp vụ đủ ba vai trò của đề tài, ba tính năng AI dùng Google Gemini, đóng gói Docker hai giai đoạn, tích hợp liên tục bằng GitHub Actions và cấu hình triển khai lên Render + Vercel. Bộ kiểm thử tự động gồm **318 phép khẳng định** chạy bằng `npm test`, hiện đạt 318/318. Hướng dẫn triển khai chi tiết ở [`DEPLOY.md`](DEPLOY.md).
+Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, hợp đồng API và toàn bộ quá trình thực hiện qua sáu sprint — **tất cả đã hoàn tất**: nghiệp vụ đủ ba vai trò của đề tài, ba tính năng AI dùng Google Gemini, đóng gói Docker hai giai đoạn, tích hợp liên tục bằng GitHub Actions và cấu hình triển khai lên Render + Vercel. Backend có **324 phép khẳng định** và frontend có **10 unit test**, hiện lần lượt đạt 324/324 và 10/10. Hướng dẫn triển khai chi tiết ở [`DEPLOY.md`](DEPLOY.md).
 
 ---
 
@@ -37,7 +37,7 @@ Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, h�
 | 4 | Đánh dấu bài học hoàn thành | `PATCH /lessons/:id/complete` → bảng `LessonProgress` | 2 |
 | 5 | Làm quiz — chọn đáp án, nộp, xem điểm ngay | `POST /quiz/:id/submit`, **chấm điểm phía server** | 3 |
 | 6 | Xem lại đáp án đúng / sai sau khi nộp | `GET /submissions/:id` trả `isCorrect` **chỉ sau khi đã nộp** | 3 |
-| 7 | Xem tiến độ khóa học (% và điểm trung bình) | `GET /enrollments/me` tính tổng hợp bằng aggregate | 3 |
+| 7 | Xem tiến độ khóa học (% và điểm trung bình) | `GET /enrollments/me` lấy điểm cao nhất từng quiz rồi tính trung bình theo khóa | 3 |
 | 8 | Làm lại quiz nếu chưa đạt | `attemptNo` + `maxAttempts` + `passScore` | 3 |
 | 9 | **AI:** giải thích đáp án sai | `POST /ai/explain-answer` → Gemini, lưu vào `Answer.aiExplanation` | 5 |
 
@@ -57,7 +57,7 @@ Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, h�
 |---|---|---|---|
 | 1 | Duyệt khóa học trước khi hiển thị public | `PATCH /courses/:id/publish` · `/reject`, máy trạng thái 4 bước | 4 |
 | 2 | CRUD category | `/categories` đầy đủ 5 endpoint | 1 |
-| 3 | Quản lý user (khóa tài khoản vi phạm) | `PATCH /users/:id/status` → cờ `isActive` chặn ngay ở tầng login | 4 |
+| 3 | Quản lý user (khóa tài khoản vi phạm) | `PATCH /users/:id/status` → cờ `isActive` được kiểm tra ở mọi request bảo vệ | 4 |
 | 4 | Thống kê tổng quan: khóa học nhiều học viên nhất | `GET /admin/stats` | 4 |
 
 ### 2.4. Ngoài phạm vi (tuyên bố rõ để bảo vệ)
@@ -367,7 +367,7 @@ Hai điều này được **kiểm chứng tự động**: bộ test gọi HTTP 
 |---|---|
 | Lộ mật khẩu khi cơ sở dữ liệu bị rò rỉ | `bcrypt` với 10 vòng salt; mật khẩu không bao giờ nằm trong response |
 | Dò mật khẩu tự động (brute force) | `express-rate-limit`: 20 lần/15 phút cho `/auth/*` |
-| Đánh cắp token | Access token sống 15 phút; refresh token lưu trong CSDL nên **thu hồi được** |
+| Đánh cắp token | Access token ngắn hạn; refresh token lưu trong CSDL và trạng thái user được kiểm tra ở mỗi request bảo vệ |
 | Dò email tồn tại trong hệ thống | Sai email và sai mật khẩu trả **cùng một** thông báo |
 | Mass assignment (gửi thừa trường `role: "admin"`) | Yup `stripUnknown` loại field lạ; `/auth/register` chỉ chấp nhận `student`/`instructor` |
 | SQL Injection | Prisma dùng tham số hóa truy vấn; không nối chuỗi SQL |
@@ -375,7 +375,7 @@ Hai điều này được **kiểm chứng tự động**: bộ test gọi HTTP 
 | Gọi API từ tên miền lạ | CORS whitelist đúng `FE_URL` |
 | Lộ khóa bí mật | `.env` nằm trong `.gitignore`; secret cấu hình qua biến môi trường của Render |
 | Lộ dữ liệu nhạy cảm qua log | `pino` cấu hình `redact` tự động che `password`, `authorization`, `token` |
-| Tài khoản vi phạm vẫn dùng được | Cờ `isActive` kiểm tra ngay tại `login` **và** `refresh` |
+| Tài khoản vi phạm vẫn dùng được | Cờ `isActive` kiểm tra tại `login`, `refresh` và middleware của mọi request bảo vệ |
 
 ---
 
@@ -400,7 +400,7 @@ Hai điều này được **kiểm chứng tự động**: bộ test gọi HTTP 
 
 **Bảo mật** — `git log --all --full-history -- .env` cho kết quả rỗng · `npm audit` không còn lỗ hổng critical/high · `helmet()` đã bật · rate limit cho `/auth/*` và `/ai/*` · không response nào chứa `password` hay `refreshToken` · `NODE_ENV=production` trên Render.
 
-**Chất lượng mã** — không còn `console.log` rải rác · không dùng `any` vô cớ · mọi route async đều `try/catch` + `next(err)` · `npm run build` sạch lỗi ở cả hai dự án · `npm test` đạt 318/318.
+**Chất lượng mã** — không còn `console.log` rải rác · không dùng `any` vô cớ · mọi route async đều `try/catch` + `next(err)` · `npm run build` sạch lỗi ở cả hai dự án · backend test đạt 324/324 · frontend test đạt 10/10.
 
 **Quan sát được** — pino log JSON có `redact` · `requestLogger` ghi method, path, status, thời gian xử lý · log forward sang Better Stack.
 
@@ -412,6 +412,7 @@ Chạy toàn bộ bằng `cd backend && npm test`. Không cần cơ sở dữ li
 
 | Tệp | Nội dung kiểm | Số phép |
 |---|---|---|
+| `tests/env.test.ts` | Kiểm tra model Gemini mặc định không bị cấu hình cục bộ làm sai lệch | 1 |
 | `tests/grader.test.ts` | Luật chấm điểm và luật mở khóa bài học (hàm thuần) | 24 |
 | `tests/workflow.test.ts` | Máy trạng thái khóa học — đủ 16 tổ hợp trạng thái × thao tác | 30 |
 | `tests/schema.test.ts` | Luật ra đề, luật nộp bài, bộ lọc quản trị, chống mass-assignment | 31 |
@@ -419,10 +420,11 @@ Chạy toàn bộ bằng `cd backend && npm test`. Không cần cơ sở dữ li
 | `tests/gemini.test.ts` | Lớp gọi Gemini: JSON, lỗi mạng, quá thời gian, không lộ chi tiết lỗi | 18 |
 | `tests/adminService.test.ts` | Duyệt khóa học, quản lý người dùng, toàn bộ số liệu thống kê | 75 |
 | `tests/aiService.test.ts` | Ba tính năng AI: phân quyền, kiểm duyệt đầu ra, bộ nhớ đệm | 36 |
-| `tests/api.test.ts` | Bảng định tuyến thật + gọi HTTP qua toàn bộ chuỗi middleware | 57 |
-| **Tổng** | | **318** |
+| `tests/enrollmentService.test.ts` | Điểm quiz trung bình theo khóa học, lấy lượt có điểm cao nhất | 4 |
+| `tests/api.test.ts` | Bảng định tuyến thật + gọi HTTP qua toàn bộ chuỗi middleware | 58 |
+| **Tổng** | | **324** |
 
-Năm khẳng định quan trọng nhất mà bộ test bảo vệ:
+Bảy khẳng định quan trọng nhất mà bộ test bảo vệ:
 
 1. Phản hồi HTTP thật của `GET /lessons/:id/quiz` **không chứa chuỗi `isCorrect`**.
 2. Gửi kèm `score: 100` khi nộp bài thì server **vẫn tự chấm ra điểm thật** (0 điểm nếu sai).
@@ -524,7 +526,7 @@ FinalProject/
 │  │  ├─ utils/                # prisma · jwt · logger · slugify
 │  │  ├─ app.ts                # lắp ráp Express
 │  │  └─ index.ts              # khởi động server + tắt an toàn
-│  ├─ tests/                   # 318 phép kiểm, chạy bằng `npm test`, không cần CSDL
+│  ├─ tests/                   # 324 phép kiểm, chạy bằng `npm test`, không cần CSDL
 │  └─ Dockerfile               # build hai tầng, image gọn cho production
 └─ frontend/
    ├─ vercel.json            # rewrite cho SPA: mọi đường dẫn trả index.html

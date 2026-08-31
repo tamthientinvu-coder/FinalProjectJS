@@ -1,36 +1,118 @@
-import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../utils/jwt";
-import { AppError } from "../types/api";
+import { NextFunction, Request, Response } from "express";
 
-/** Bắt buộc đăng nhập: đọc Bearer token -> gắn req.user. */
-export function authenticate(req: Request, _res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) {
-    return next(new AppError(401, "Chưa đăng nhập (thiếu Authorization header)"));
+import { AccessTokenPayload, AppError } from "../types/api";
+import { verifyAccessToken } from "../utils/jwt";
+import prisma from "../utils/prisma";
+
+function readAccessTokenPayload(
+  authorizationHeader: string | undefined,
+): AccessTokenPayload {
+  if (!authorizationHeader?.startsWith("Bearer ")) {
+    throw new AppError(
+      401,
+      "Chưa đăng nhập (thiếu Authorization header)",
+    );
   }
 
   try {
-    const payload = verifyAccessToken(header.split(" ")[1]);
-    req.user = { id: payload.id, email: payload.email, role: payload.role };
-    next();
-  } catch (err: any) {
-    if (err.name === "TokenExpiredError") {
-      return next(new AppError(401, "Token đã hết hạn"));
+    const token = authorizationHeader.slice("Bearer ".length);
+    return verifyAccessToken(token);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "TokenExpiredError") {
+      throw new AppError(401, "Token đã hết hạn");
     }
-    next(new AppError(401, "Token không hợp lệ"));
+
+    throw new AppError(401, "Token không hợp lệ");
   }
 }
 
-/** Không bắt buộc: có token thì gắn req.user, không có vẫn cho đi tiếp. */
-export function authenticateOptional(req: Request, _res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) return next();
+function findUserForAuthentication(userId: number) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      isActive: true,
+    },
+  });
+}
+
+export async function authenticate(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  let payload: AccessTokenPayload;
 
   try {
-    const payload = verifyAccessToken(header.split(" ")[1]);
-    req.user = { id: payload.id, email: payload.email, role: payload.role };
-  } catch {
-    // token hỏng -> coi như khách vãng lai
+    payload = readAccessTokenPayload(req.headers.authorization);
+  } catch (error) {
+    next(error);
+    return;
   }
-  next();
+
+  try {
+    const user = await findUserForAuthentication(payload.id);
+
+    if (!user) {
+      next(new AppError(401, "Tài khoản không còn tồn tại"));
+      return;
+    }
+
+    if (!user.isActive) {
+      next(
+        new AppError(
+          403,
+          "Tài khoản đã bị khóa, vui lòng liên hệ quản trị viên",
+        ),
+      );
+      return;
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function authenticateOptional(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  if (!req.headers.authorization?.startsWith("Bearer ")) {
+    next();
+    return;
+  }
+
+  let payload: AccessTokenPayload;
+
+  try {
+    payload = readAccessTokenPayload(req.headers.authorization);
+  } catch {
+    next();
+    return;
+  }
+
+  try {
+    const user = await findUserForAuthentication(payload.id);
+
+    if (user?.isActive) {
+      req.user = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      };
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 }

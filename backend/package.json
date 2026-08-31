@@ -13,7 +13,8 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
-    "test": "ts-node --transpile-only tests/grader.test.ts && ts-node --transpile-only tests/workflow.test.ts && ts-node --transpile-only tests/schema.test.ts && ts-node --transpile-only tests/gemini.test.ts && ts-node --transpile-only tests/quizService.test.ts && ts-node --transpile-only tests/adminService.test.ts && ts-node --transpile-only tests/aiService.test.ts && ts-node --transpile-only tests/api.test.ts",
+    "seed:prod": "dotenv -e .env.production.local -- ts-node prisma/seed.ts",
+    "test": "ts-node --transpile-only tests/env.test.ts && ts-node --transpile-only tests/grader.test.ts && ts-node --transpile-only tests/workflow.test.ts && ts-node --transpile-only tests/schema.test.ts && ts-node --transpile-only tests/gemini.test.ts && ts-node --transpile-only tests/quizService.test.ts && ts-node --transpile-only tests/adminService.test.ts && ts-node --transpile-only tests/aiService.test.ts && ts-node --transpile-only tests/enrollmentService.test.ts && ts-node --transpile-only tests/api.test.ts",
     "test:unit": "ts-node --transpile-only tests/grader.test.ts && ts-node --transpile-only tests/workflow.test.ts && ts-node --transpile-only tests/schema.test.ts",
     "studio:prod": "dotenv -e .env.production.local -- prisma studio"
   },
