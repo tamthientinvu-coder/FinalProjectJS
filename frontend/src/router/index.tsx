@@ -51,7 +51,7 @@ const router = createBrowserRouter([
       {
         path: "my-courses",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["student"]}>
             <MyCoursesPage />
           </ProtectedRoute>
         ),
@@ -59,7 +59,7 @@ const router = createBrowserRouter([
       {
         path: "learn/:courseId",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["student"]}>
             <LearnPage />
           </ProtectedRoute>
         ),
@@ -67,7 +67,7 @@ const router = createBrowserRouter([
       {
         path: "quiz/:lessonId",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["student"]}>
             <QuizPage />
           </ProtectedRoute>
         ),
@@ -75,7 +75,7 @@ const router = createBrowserRouter([
       {
         path: "quiz-result/:submissionId",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute roles={["student"]}>
             <QuizResultPage />
           </ProtectedRoute>
         ),

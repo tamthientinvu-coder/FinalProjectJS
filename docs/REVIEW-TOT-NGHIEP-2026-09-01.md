@@ -1,5 +1,10 @@
 # BÁO CÁO REVIEW MỨC ĐỘ SẴN SÀNG TỐT NGHIỆP — LEARNQUIZ
 
+> **Trạng thái:** Đây là ảnh chụp đánh giá *trước khắc phục* tại commit `c4b99d0`.
+> Các finding F1–F12 đã được xử lý và kiểm định lại; xem
+> [BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md](./BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md)
+> để dùng làm kết luận bàn giao cuối.
+
 **Ngày review:** 01/09/2026  
 **Phạm vi:** toàn bộ `FinalProject` tại commit `c4b99d0`, đối chiếu với đề gốc `ĐỀ TÀI 4 — Nền Tảng Học Tập & Quiz Trực Tuyến.docx`  
 **Phương pháp:** đọc mã nguồn theo hai trục Spec/Standards; chạy typecheck, test, build, Prisma validate, npm audit; smoke test deployment production; kiểm tra báo cáo Word.  

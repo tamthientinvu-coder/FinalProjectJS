@@ -20,3 +20,5 @@ Thumbs.db
 backend/prisma/*.db
 .gstack/
 frontend/tsconfig.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/

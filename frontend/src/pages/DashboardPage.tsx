@@ -17,7 +17,6 @@ const quickLinks: Record<UserRole, { label: string; to: string }[]> = {
   instructor: [
     { label: "Quản lý khóa học", to: "/instructor/courses" },
     { label: "Tạo khóa học mới", to: "/instructor/courses/new" },
-    { label: "Khóa học đang học", to: "/my-courses" },
   ],
   admin: [
     { label: "Tổng quan hệ thống", to: "/admin" },
