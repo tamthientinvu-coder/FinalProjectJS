@@ -1,6 +1,7 @@
 import prisma from "../utils/prisma";
 import { AppError, UserRole } from "../types/api";
 import { computeUnlock } from "./lessonRules";
+import { mutationState } from "./courseMutationPolicy";
 
 interface Viewer {
   id: number;
@@ -65,7 +66,8 @@ export async function create(
   viewer: Viewer,
   input: { title: string; content?: string; videoUrl?: string | null; order?: number }
 ) {
-  await assertCanManage(courseId, viewer);
+  const access = await assertCanManage(courseId, viewer);
+  const reviewReset = mutationState(access.course as any, viewer);
 
   let order = input.order;
   if (order === undefined) {
@@ -84,15 +86,20 @@ export async function create(
     if (taken) throw new AppError(409, `Đã có bài học ở vị trí số ${order}`);
   }
 
-  return prisma.lesson.create({
-    data: {
-      courseId,
-      title: input.title,
-      content: input.content,
-      videoUrl: input.videoUrl,
-      order,
-    },
-    include: { quiz: { select: { id: true, title: true } } },
+  return prisma.$transaction(async (tx) => {
+    if (reviewReset) {
+      await tx.course.update({ where: { id: courseId }, data: reviewReset });
+    }
+    return tx.lesson.create({
+      data: {
+        courseId,
+        title: input.title,
+        content: input.content,
+        videoUrl: input.videoUrl,
+        order,
+      },
+      include: { quiz: { select: { id: true, title: true } } },
+    });
   });
 }
 
@@ -102,20 +109,43 @@ export async function update(
   input: { title?: string; content?: string | null; videoUrl?: string | null }
 ) {
   const lesson = await findLessonOrFail(lessonId);
-  await assertCanManage(lesson.courseId, viewer);
+  const access = await assertCanManage(lesson.courseId, viewer);
+  const reviewReset = mutationState(access.course as any, viewer);
 
-  return prisma.lesson.update({
-    where: { id: lessonId },
-    data: input,
-    include: { quiz: { select: { id: true, title: true } } },
+  return prisma.$transaction(async (tx) => {
+    if (reviewReset) {
+      await tx.course.update({ where: { id: lesson.courseId }, data: reviewReset });
+    }
+    return tx.lesson.update({
+      where: { id: lessonId },
+      data: input,
+      include: { quiz: { select: { id: true, title: true } } },
+    });
   });
 }
 
 export async function remove(lessonId: number, viewer: Viewer) {
   const lesson = await findLessonOrFail(lessonId);
-  await assertCanManage(lesson.courseId, viewer);
+  const access = await assertCanManage(lesson.courseId, viewer);
+  const reviewReset = mutationState(access.course as any, viewer);
 
-  await prisma.lesson.delete({ where: { id: lessonId } });
+  const [progressCount, quiz] = await Promise.all([
+    prisma.lessonProgress.count({ where: { lessonId } }),
+    prisma.quiz.findUnique({ where: { lessonId }, select: { id: true, _count: { select: { submissions: true } } } }),
+  ]);
+  if (progressCount > 0) {
+    throw new AppError(409, "Bài học đã có tiến độ nên không thể xóa");
+  }
+  if ((quiz?._count.submissions ?? 0) > 0) {
+    throw new AppError(409, "Bài học đã có lượt làm bài nên không thể xóa");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (reviewReset) {
+      await tx.course.update({ where: { id: lesson.courseId }, data: reviewReset });
+    }
+    await tx.lesson.delete({ where: { id: lessonId } });
+  });
 }
 
 /**
@@ -133,7 +163,8 @@ export async function reorder(
   viewer: Viewer,
   items: { id: number; order: number }[]
 ) {
-  await assertCanManage(courseId, viewer);
+  const access = await assertCanManage(courseId, viewer);
+  const reviewReset = mutationState(access.course as any, viewer);
 
   const lessons = await prisma.lesson.findMany({
     where: { courseId },
@@ -157,6 +188,9 @@ export async function reorder(
   }
 
   await prisma.$transaction(async (tx) => {
+    if (reviewReset) {
+      await tx.course.update({ where: { id: courseId }, data: reviewReset });
+    }
     for (const item of items) {
       await tx.lesson.update({ where: { id: item.id }, data: { order: -item.order } });
     }
@@ -274,11 +308,27 @@ export async function getLessonContent(lessonId: number, viewer: Viewer) {
 
 /** Đánh dấu (hoặc bỏ đánh dấu) hoàn thành một bài học. */
 export async function markComplete(lessonId: number, viewer: Viewer, isCompleted: boolean) {
+  if (viewer.role !== "student") {
+    throw new AppError(403, "Chỉ học viên mới được đánh dấu hoàn thành bài học");
+  }
   const lesson = await findLessonOrFail(lessonId);
   const access = await resolveAccess(lesson.courseId, viewer);
 
   if (!access.enrollment) {
     throw new AppError(403, "Bạn cần đăng ký khóa học này trước khi đánh dấu hoàn thành");
+  }
+
+  const siblings = await prisma.lesson.findMany({
+    where: { courseId: lesson.courseId },
+    select: { id: true, order: true },
+  });
+  const progresses = await prisma.lessonProgress.findMany({
+    where: { enrollmentId: access.enrollment.id, isCompleted: true },
+    select: { lessonId: true },
+  });
+  const unlocked = computeUnlock(siblings, new Set(progresses.map((p) => p.lessonId)), false);
+  if (!unlocked.get(lessonId)) {
+    throw new AppError(403, "Bạn cần hoàn thành bài học trước đó mới đánh dấu được bài này");
   }
 
   // upsert: lần đầu thì tạo, các lần sau thì cập nhật.

@@ -44,6 +44,9 @@ jobs:
       - name: Kiểm tra kiểu TypeScript
         run: npm run typecheck
 
+      - name: Kiểm tra quy chuẩn mã nguồn
+        run: npm run lint
+
       - name: Chạy bộ kiểm thử
         # Bộ test dùng Prisma giả lập trong bộ nhớ nên KHÔNG cần dựng cơ sở dữ liệu
         # (biến môi trường đã khai báo ở cấp job phía trên)
@@ -73,6 +76,9 @@ jobs:
 
       - name: Kiểm tra kiểu TypeScript
         run: npm run typecheck
+
+      - name: Kiểm tra quy chuẩn mã nguồn
+        run: npm run lint
 
       - name: Chạy bộ kiểm thử
         run: npm test

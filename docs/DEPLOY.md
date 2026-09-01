@@ -375,8 +375,8 @@ docker compose -f docker-compose.full.yml down
 
 | Job | Nội dung |
 |---|---|
-| **backend** | `prisma validate` → `typecheck` → `npm test` (324 phép kiểm) → `build` |
-| **frontend** | `npm test` (10 phép kiểm) → `typecheck` → `build` production |
+| **backend** | `prisma validate` → `typecheck` → `lint` → `npm test` (344 phép kiểm) → `build` |
+| **frontend** | `typecheck` → `lint` → `npm test` (10 phép kiểm) → `build` production |
 | **security** | Chặn nếu `.env` từng bị commit · `npm audit` cả hai dự án |
 
 Bộ kiểm thử dùng Prisma giả lập trong bộ nhớ nên **CI không cần dựng cơ sở dữ liệu thật** — chạy xong trong khoảng một phút. Nếu một job báo đỏ (❌) trên GitHub, bấm vào job đó để xem log chi tiết trước khi push tiếp.
@@ -433,7 +433,7 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 **Chất lượng mã**
 
 - [ ] `npm run build` sạch lỗi ở cả hai dự án
-- [ ] Backend `npm test` đạt 324/324 và frontend `npm test` đạt 10/10
+- [ ] Backend `npm test` đạt 344/344 và frontend `npm test` đạt 10/10
 - [ ] Không còn `console.log` rải rác
 - [ ] Mọi route async đều `try/catch` + `next(err)`
 

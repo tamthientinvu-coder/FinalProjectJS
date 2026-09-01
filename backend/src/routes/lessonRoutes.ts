@@ -35,6 +35,7 @@ router.patch(
   "/:id/complete",
   validateId(),
   authenticate,
+  authorize("student"),
   validate(completeLessonSchema),
   lessonController.markComplete
 );

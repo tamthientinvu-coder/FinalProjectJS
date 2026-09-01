@@ -27,6 +27,7 @@ import { aiApi } from "../api/aiApi";
 import { useAiStatus } from "../hooks/useAiStatus";
 import { handleApiError } from "../utils/handleApiError";
 import type { SubmissionResult } from "../types/quiz";
+import { canRetryQuiz } from "../utils/quizAttempts";
 
 export default function QuizResultPage() {
   const { submissionId } = useParams<{ submissionId: string }>();
@@ -82,7 +83,7 @@ export default function QuizResultPage() {
   }
 
   const { submission, quiz, lesson, questions } = result;
-  const canRetry = quiz.maxAttempts === null || submission.attemptNo < quiz.maxAttempts;
+  const canRetry = canRetryQuiz(submission, quiz.maxAttempts);
 
   return (
     <Stack spacing={3}>

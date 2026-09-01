@@ -1,6 +1,7 @@
 import prisma from "../utils/prisma";
 import { AppError, CourseStatus, UserRole } from "../types/api";
 import { canTransition, explainRefusal, nextStatus } from "./courseWorkflow";
+import { serializableTransaction } from "../utils/serializableTransaction";
 
 interface Viewer {
   id: number;
@@ -187,7 +188,8 @@ export async function listUsers(filter: UserFilter) {
  * vì vậy access token đang cầm bị vô hiệu hóa ngay sau thao tác khóa.
  */
 export async function setUserStatus(targetUserId: number, isActive: boolean, actor: Viewer) {
-  const target = await prisma.user.findUnique({
+  return serializableTransaction(async (tx) => {
+  const target = await tx.user.findUnique({
     where: { id: targetUserId },
     select: { id: true, name: true, role: true, isActive: true },
   });
@@ -198,7 +200,7 @@ export async function setUserStatus(targetUserId: number, isActive: boolean, act
   }
 
   if (!isActive && target.role === "admin") {
-    const activeAdmins = await prisma.user.count({ where: { role: "admin", isActive: true } });
+    const activeAdmins = await tx.user.count({ where: { role: "admin", isActive: true } });
     if (activeAdmins <= 1) {
       throw new AppError(409, "Không thể khóa quản trị viên đang hoạt động cuối cùng của hệ thống");
     }
@@ -208,7 +210,7 @@ export async function setUserStatus(targetUserId: number, isActive: boolean, act
     throw new AppError(409, `Tài khoản đã ở trạng thái ${isActive ? "đang hoạt động" : "bị khóa"}`);
   }
 
-  return prisma.user.update({
+  return tx.user.update({
     where: { id: targetUserId },
     data: {
       isActive,
@@ -216,6 +218,7 @@ export async function setUserStatus(targetUserId: number, isActive: boolean, act
       ...(isActive ? {} : { refreshToken: null }),
     },
     select: publicUserSelect,
+  });
   });
 }
 

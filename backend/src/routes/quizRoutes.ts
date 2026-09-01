@@ -31,11 +31,12 @@ router.post(
   "/:id/submit",
   validateId(),
   authenticate,
+  authorize("student"),
   validate(submitQuizSchema),
   quizController.submit
 );
 
 // Lịch sử các lượt làm bài của chính mình
-router.get("/:id/submissions/me", validateId(), authenticate, quizController.listMySubmissions);
+router.get("/:id/submissions/me", validateId(), authenticate, authorize("student"), quizController.listMySubmissions);
 
 export default router;

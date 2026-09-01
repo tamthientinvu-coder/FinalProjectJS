@@ -14,6 +14,9 @@ const courseInclude = {
 
 /** Đăng ký học một khóa miễn phí. */
 export async function enroll(courseId: number, viewer: Viewer) {
+  if (viewer.role !== "student") {
+    throw new AppError(403, "Chỉ học viên mới được đăng ký khóa học");
+  }
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     select: { id: true, title: true, status: true, instructorId: true },
@@ -46,6 +49,9 @@ export async function enroll(courseId: number, viewer: Viewer) {
  * của từng quiz. Mỗi quiz có trọng số như nhau dù học viên làm lại nhiều lần.
  */
 export async function listMine(viewer: Viewer) {
+  if (viewer.role !== "student") {
+    throw new AppError(403, "Chỉ học viên mới có danh sách khóa học đang học");
+  }
   const [enrollments, submissions] = await prisma.$transaction([
     prisma.enrollment.findMany({
       where: { studentId: viewer.id },

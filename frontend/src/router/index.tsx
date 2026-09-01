@@ -1,27 +1,29 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout";
-import HomePage from "../pages/HomePage";
-import LoginPage from "../pages/LoginPage";
-import RegisterPage from "../pages/RegisterPage";
-import DashboardPage from "../pages/DashboardPage";
-import CourseListPage from "../pages/CourseListPage";
-import CourseDetailPage from "../pages/CourseDetailPage";
-import MyCoursesPage from "../pages/MyCoursesPage";
-import LearnPage from "../pages/LearnPage";
-import QuizPage from "../pages/QuizPage";
-import QuizResultPage from "../pages/QuizResultPage";
-import InstructorCoursesPage from "../pages/instructor/InstructorCoursesPage";
-import CourseFormPage from "../pages/instructor/CourseFormPage";
-import LessonEditorPage from "../pages/instructor/LessonEditorPage";
-import QuizEditorPage from "../pages/instructor/QuizEditorPage";
-import CourseStatsPage from "../pages/instructor/CourseStatsPage";
-import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
-import AdminCoursesPage from "../pages/admin/AdminCoursesPage";
-import AdminUsersPage from "../pages/admin/AdminUsersPage";
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import ForbiddenPage from "../pages/ForbiddenPage";
-import NotFoundPage from "../pages/NotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
+
+const HomePage = lazy(() => import("../pages/HomePage"));
+const LoginPage = lazy(() => import("../pages/LoginPage"));
+const RegisterPage = lazy(() => import("../pages/RegisterPage"));
+const DashboardPage = lazy(() => import("../pages/DashboardPage"));
+const CourseListPage = lazy(() => import("../pages/CourseListPage"));
+const CourseDetailPage = lazy(() => import("../pages/CourseDetailPage"));
+const MyCoursesPage = lazy(() => import("../pages/MyCoursesPage"));
+const LearnPage = lazy(() => import("../pages/LearnPage"));
+const QuizPage = lazy(() => import("../pages/QuizPage"));
+const QuizResultPage = lazy(() => import("../pages/QuizResultPage"));
+const InstructorCoursesPage = lazy(() => import("../pages/instructor/InstructorCoursesPage"));
+const CourseFormPage = lazy(() => import("../pages/instructor/CourseFormPage"));
+const LessonEditorPage = lazy(() => import("../pages/instructor/LessonEditorPage"));
+const QuizEditorPage = lazy(() => import("../pages/instructor/QuizEditorPage"));
+const CourseStatsPage = lazy(() => import("../pages/instructor/CourseStatsPage"));
+const AdminCategoriesPage = lazy(() => import("../pages/admin/AdminCategoriesPage"));
+const AdminCoursesPage = lazy(() => import("../pages/admin/AdminCoursesPage"));
+const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const ForbiddenPage = lazy(() => import("../pages/ForbiddenPage"));
+const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
 const router = createBrowserRouter([
   {

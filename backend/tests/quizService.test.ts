@@ -87,12 +87,16 @@ const ADMIN = { id: 1, role: "admin" as const };
   ]);
   ok("làm lại -> lượt thứ 2", r2.submission.attemptNo === 2);
   ok("2/2 đúng -> 100 điểm, đạt", r2.submission.score === 100 && r2.submission.passed === true);
+  await expectError("đã đạt -> không được thi lại để làm sai lịch sử", () =>
+    quizService.submit(10, STUDENT, [{ questionId: 1000, choiceId: null }]), 409, "đã đạt");
+  const passedView = await quizService.getForStudent(1, STUDENT);
+  ok("đã đạt -> giao diện nhận canAttempt=false", passedView.attempts.canAttempt === false);
 
-  const r3 = await quizService.submit(10, STUDENT, [{ questionId: 1000, choiceId: null }]);
-  ok("bỏ trống hết -> 0 điểm", r3.submission.score === 0);
-  ok("thiếu câu vẫn tính đủ tổng số", r3.submission.totalQuestions === 2);
-
-  await expectError("hết 3 lượt -> chặn", () => quizService.submit(10, STUDENT, [{ questionId: 1000, choiceId: 10001 }]), 409, "hết");
+  seed();
+  db.quizzes[0].maxAttempts = 1;
+  await quizService.submit(10, STUDENT, [{ questionId: 1000, choiceId: null }]);
+  await expectError("hết 1 lượt chưa đạt -> chặn", () =>
+    quizService.submit(10, STUDENT, [{ questionId: 1000, choiceId: 10001 }]), 409, "hết");
 
   section("D. CHỐNG GIAN LẬN QUA API");
   seed();
@@ -106,7 +110,7 @@ const ADMIN = { id: 1, role: "admin" as const };
   ok("chọn đáp án của câu khác -> ghi nhận là bỏ trống", rCross.questions[0].selectedChoiceId === null);
 
   seed();
-  await expectError("giảng viên nộp bài", () => quizService.submit(10, INSTRUCTOR, [{ questionId: 1000, choiceId: 10001 }]), 403, "xem trước");
+  await expectError("giảng viên nộp bài", () => quizService.submit(10, INSTRUCTOR, [{ questionId: 1000, choiceId: 10001 }]), 403, "học viên");
   await expectError("người ngoài nộp bài", () => quizService.submit(10, OTHER_STUDENT, [{ questionId: 1000, choiceId: 10001 }]), 403, "đăng ký");
 
   section("E. XEM LẠI BÀI ĐÃ NỘP");
@@ -125,8 +129,12 @@ const ADMIN = { id: 1, role: "admin" as const };
   const q = { text: "Câu hỏi mới thử nghiệm?", choices: [1, 2, 3, 4].map((i) => ({ text: `Đ${i}`, isCorrect: i === 1 })) };
   await expectError("sửa bộ câu hỏi khi đã có bài nộp",
     () => quizService.upsert(1, INSTRUCTOR, { title: "Đề mới", passScore: 70, maxAttempts: null, questions: [q] }), 409, "lượt làm bài");
-  const meta = await quizService.updateMeta(10, INSTRUCTOR, { passScore: 60 });
-  ok("vẫn sửa được điểm đạt", meta.passScore === 60);
+  await expectError("không đổi điểm đạt sau khi đã có bài nộp",
+    () => quizService.updateMeta(10, INSTRUCTOR, { passScore: 60 }), 409, "điểm đạt");
+  const meta = await quizService.updateMeta(10, INSTRUCTOR, { title: "Tên mới" });
+  ok("vẫn sửa được tên quiz", meta.title === "Tên mới");
+  await expectError("không xóa quiz đã có lịch sử",
+    () => quizService.remove(10, INSTRUCTOR), 409, "lượt làm bài");
   await expectError("người lạ sửa quiz", () => quizService.updateMeta(10, OTHER_STUDENT, { passScore: 10 }), 403);
 
   section("G. TẠO QUIZ MỚI");

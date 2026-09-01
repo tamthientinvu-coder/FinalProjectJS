@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { RouterProvider } from "react-router-dom";
@@ -14,7 +14,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <RouterProvider router={router} />
+        <Suspense fallback={<div className="route-loading">Đang tải trang...</div>}>
+          <RouterProvider router={router} />
+        </Suspense>
       </AuthProvider>
       <SpeedInsights />
       <Analytics />

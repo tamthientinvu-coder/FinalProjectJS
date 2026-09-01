@@ -115,6 +115,7 @@ function request(server: any, method: string, path: string, token?: string, body
 
   const studentToken = signAccessToken({ id: 4, email: "s@x.vn", role: "student" });
   const strangerToken = signAccessToken({ id: 5, email: "o@x.vn", role: "student" });
+  const instructorToken = signAccessToken({ id: 2, email: "gv@x.vn", role: "instructor" });
 
   section("I. GỌI HTTP THẬT QUA TOÀN BỘ CHUỖI MIDDLEWARE");
 
@@ -142,6 +143,12 @@ function request(server: any, method: string, path: string, token?: string, body
     { answers: [{ questionId: 1000, choiceId: 10001 }, { questionId: 1000, choiceId: 10002 }] });
   ok("trùng câu hỏi -> 400", dup.status === 400, `nhận ${dup.status}`);
 
+  const instructorEnroll = await request(server, "POST", "/api/v1/courses/1/enroll", instructorToken);
+  ok("giảng viên gọi endpoint đăng ký học -> 403", instructorEnroll.status === 403, `nhận ${instructorEnroll.status}`);
+
+  const instructorComplete = await request(server, "PATCH", "/api/v1/lessons/1/complete", instructorToken, { isCompleted: true });
+  ok("giảng viên gọi endpoint hoàn thành bài -> 403", instructorComplete.status === 403, `nhận ${instructorComplete.status}`);
+
   const submitRes = await request(server, "POST", "/api/v1/quiz/10/submit", studentToken, { answers: [{ questionId: 1000, choiceId: 10001 }] });
   ok("nộp bài -> 201 và 100 điểm", submitRes.status === 201 && submitRes.body?.data?.submission?.score === 100,
     `nhận ${submitRes.status}: ${submitRes.raw.slice(0, 200)}`);
@@ -153,6 +160,7 @@ function request(server: any, method: string, path: string, token?: string, body
   const notFound = await request(server, "GET", "/api/v1/khong-ton-tai", studentToken);
   ok("endpoint không tồn tại -> 404", notFound.status === 404, `nhận ${notFound.status}`);
 
+  seed();
   const massAssign = await request(server, "POST", "/api/v1/quiz/10/submit", studentToken,
     { answers: [{ questionId: 1000, choiceId: 10002 }], score: 100 });
   ok("gửi kèm score=100 -> server VẪN tự chấm ra 0",

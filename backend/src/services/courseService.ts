@@ -1,6 +1,7 @@
 import prisma from "../utils/prisma";
 import { AppError, CourseLevel, CourseStatus, UserRole } from "../types/api";
 import { canTransition, explainRefusal, nextStatus } from "./courseWorkflow";
+import { mutationState } from "./courseMutationPolicy";
 
 /** Thông tin kèm theo dùng chung cho danh sách khóa học. */
 const listInclude = {
@@ -171,12 +172,16 @@ export async function update(
     level?: CourseLevel;
   }
 ) {
-  await findAndAssertCanEdit(id, user);
+  const course = await findAndAssertCanEdit(id, user);
   await assertCategoryExists(input.categoryId);
+  const reviewReset = mutationState(
+    { ...course, status: course.status as CourseStatus },
+    user
+  );
 
   return prisma.course.update({
     where: { id },
-    data: input,
+    data: { ...input, ...(reviewReset ?? {}) },
     include: listInclude,
   });
 }
@@ -189,6 +194,16 @@ export async function submitForReview(id: number, user: { id: number; role: User
   // không viết lại if/else ở mỗi service.
   if (!canTransition(course.status as CourseStatus, "submit")) {
     throw new AppError(409, explainRefusal(course.status as CourseStatus, "submit"));
+  }
+
+  if (!course.description?.trim()) {
+    throw new AppError(400, "Khóa học phải có mô tả trước khi gửi duyệt");
+  }
+  if (!course.thumbnail?.trim()) {
+    throw new AppError(400, "Khóa học phải có ảnh đại diện trước khi gửi duyệt");
+  }
+  if (!course.categoryId) {
+    throw new AppError(400, "Khóa học phải thuộc một danh mục trước khi gửi duyệt");
   }
 
   // Không cho gửi duyệt một khóa học rỗng - admin sẽ không có gì để xem

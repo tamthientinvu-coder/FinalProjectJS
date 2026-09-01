@@ -2,6 +2,8 @@ import prisma from "../utils/prisma";
 import { AppError, UserRole } from "../types/api";
 import { computeUnlock } from "./lessonRules";
 import { gradeQuiz, isPassed, type SubmittedAnswer } from "./quizGrader";
+import { mutationState } from "./courseMutationPolicy";
+import { serializableTransaction } from "../utils/serializableTransaction";
 
 interface Viewer {
   id: number;
@@ -22,7 +24,7 @@ async function resolveLessonAccess(lessonId: number, viewer: Viewer) {
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
     include: {
-      course: { select: { id: true, title: true, instructorId: true } },
+      course: { select: { id: true, title: true, instructorId: true, status: true } },
     },
   });
   if (!lesson) throw new AppError(404, "Không tìm thấy bài học");
@@ -119,19 +121,7 @@ export async function upsert(
   if (!access.canManage) {
     throw new AppError(403, "Bạn chỉ được soạn quiz cho khóa học do mình tạo");
   }
-
-  const existing = await prisma.quiz.findUnique({
-    where: { lessonId },
-    select: { id: true, _count: { select: { submissions: true } } },
-  });
-
-  if (existing && existing._count.submissions > 0) {
-    throw new AppError(
-      409,
-      `Quiz đã có ${existing._count.submissions} lượt làm bài nên không sửa được câu hỏi. ` +
-        `Bạn vẫn đổi được tên quiz, điểm đạt và số lượt làm.`
-    );
-  }
+  const reviewReset = mutationState(access.lesson.course as any, viewer);
 
   const questionData = input.questions.map((q, index) => ({
     text: q.text,
@@ -139,7 +129,21 @@ export async function upsert(
     choices: { create: q.choices.map((c) => ({ text: c.text, isCorrect: c.isCorrect })) },
   }));
 
-  return prisma.$transaction(async (tx) => {
+  return serializableTransaction(async (tx) => {
+    if (reviewReset) {
+      await tx.course.update({ where: { id: access.lesson.courseId }, data: reviewReset });
+    }
+    const existing = await tx.quiz.findUnique({
+      where: { lessonId },
+      select: { id: true, _count: { select: { submissions: true } } },
+    });
+    if (existing && existing._count.submissions > 0) {
+      throw new AppError(
+        409,
+        "Quiz đã có lượt làm bài nên không sửa được câu hỏi. Bạn vẫn đổi được tên quiz và số lượt làm."
+      );
+    }
+
     if (!existing) {
       return tx.quiz.create({
         data: {
@@ -184,8 +188,22 @@ export async function updateMeta(
   if (!access.canManage) {
     throw new AppError(403, "Bạn chỉ được sửa quiz của khóa học do mình tạo");
   }
+  const reviewReset = mutationState(access.lesson.course as any, viewer);
 
-  return prisma.quiz.update({ where: { id: quizId }, data: input });
+  return serializableTransaction(async (tx) => {
+    const submissionCount = await tx.quizSubmission.count({ where: { quizId } });
+    if (
+      submissionCount > 0 &&
+      input.passScore !== undefined &&
+      input.passScore !== access.quiz.passScore
+    ) {
+      throw new AppError(409, "Không thể đổi điểm đạt sau khi quiz đã có lượt làm bài");
+    }
+    if (reviewReset) {
+      await tx.course.update({ where: { id: access.lesson.courseId }, data: reviewReset });
+    }
+    return tx.quiz.update({ where: { id: quizId }, data: input });
+  });
 }
 
 export async function remove(quizId: number, viewer: Viewer) {
@@ -193,8 +211,18 @@ export async function remove(quizId: number, viewer: Viewer) {
   if (!access.canManage) {
     throw new AppError(403, "Bạn chỉ được xóa quiz của khóa học do mình tạo");
   }
+  const reviewReset = mutationState(access.lesson.course as any, viewer);
 
-  await prisma.quiz.delete({ where: { id: quizId } });
+  await serializableTransaction(async (tx) => {
+    const submissionCount = await tx.quizSubmission.count({ where: { quizId } });
+    if (submissionCount > 0) {
+      throw new AppError(409, "Quiz đã có lượt làm bài nên không thể xóa");
+    }
+    if (reviewReset) {
+      await tx.course.update({ where: { id: access.lesson.courseId }, data: reviewReset });
+    }
+    await tx.quiz.delete({ where: { id: quizId } });
+  });
 }
 
 // ============================================================
@@ -257,6 +285,7 @@ export async function getForStudent(lessonId: number, viewer: Viewer) {
   // trường hợp giao diện khóa nút nộp nhưng API vẫn cho nộp (hoặc ngược lại).
   const isPreview = access.canManage && !access.enrollment;
   const hasAttemptLeft = quiz.maxAttempts === null || used < quiz.maxAttempts;
+  const hasPassed = submissions.some((submission) => submission.score >= quiz.passScore);
 
   return {
     lesson: { id: access.lesson.id, title: access.lesson.title, courseId: access.lesson.courseId },
@@ -271,7 +300,7 @@ export async function getForStudent(lessonId: number, viewer: Viewer) {
     attempts: {
       used,
       max: quiz.maxAttempts,
-      canAttempt: !isPreview && hasAttemptLeft,
+      canAttempt: !isPreview && !hasPassed && hasAttemptLeft,
       best,
       last: submissions[0] ?? null,
       history: submissions,
@@ -287,6 +316,9 @@ export async function getForStudent(lessonId: number, viewer: Viewer) {
  * không gửi điểm - nếu tin điểm do client gửi thì ai cũng tự cho mình 100.
  */
 export async function submit(quizId: number, viewer: Viewer, answers: SubmittedAnswer[]) {
+  if (viewer.role !== "student") {
+    throw new AppError(403, "Chỉ học viên mới được nộp bài quiz");
+  }
   const access = await resolveQuizAccess(quizId, viewer);
 
   if (access.canManage && !access.enrollment) {
@@ -298,60 +330,58 @@ export async function submit(quizId: number, viewer: Viewer, answers: SubmittedA
 
   await assertLessonUnlocked(access.lesson.courseId, access.lesson.id, access.enrollment.id);
 
-  // Lấy đề kèm đáp án đúng - chỉ dùng nội bộ để chấm, không trả nguyên vẹn ra ngoài
-  const questions = await prisma.question.findMany({
-    where: { quizId },
-    orderBy: { order: "asc" },
-    select: { id: true, choices: { select: { id: true, isCorrect: true } } },
-  });
-
-  if (questions.length === 0) {
-    throw new AppError(409, "Quiz này chưa có câu hỏi nào");
-  }
-
-  // Kiểm tra bài làm có tham chiếu tới câu hỏi lạ không (gõ tay bằng Postman chẳng hạn)
-  const questionIds = new Set(questions.map((q) => q.id));
-  const unknown = answers.filter((a) => !questionIds.has(a.questionId));
-  if (unknown.length > 0) {
-    throw new AppError(400, "Bài làm chứa câu hỏi không thuộc quiz này");
-  }
-
-  const usedAttempts = await prisma.quizSubmission.count({
-    where: { quizId, studentId: viewer.id },
-  });
-  if (access.quiz.maxAttempts !== null && usedAttempts >= access.quiz.maxAttempts) {
-    throw new AppError(
-      409,
-      `Bạn đã dùng hết ${access.quiz.maxAttempts} lượt làm bài cho quiz này`
-    );
-  }
-
-  const result = gradeQuiz(questions, answers);
-  const attemptNo = usedAttempts + 1;
-
   try {
-    // Tạo bài nộp và toàn bộ câu trả lời trong MỘT thao tác ghi (nested create):
-    // không thể xảy ra cảnh có bài nộp mà thiếu câu trả lời.
-    const submission = await prisma.quizSubmission.create({
-      data: {
-        studentId: viewer.id,
-        quizId,
-        score: result.score,
-        correctCount: result.correctCount,
-        totalQuestions: result.totalQuestions,
-        attemptNo,
-        answers: {
-          create: result.answers.map((a) => ({
-            questionId: a.questionId,
-            choiceId: a.choiceId,
-            isCorrect: a.isCorrect,
-          })),
+    const submissionId = await serializableTransaction(async (tx) => {
+      // Đọc đề, lịch sử và ghi bài làm trong cùng transaction để việc sửa đề
+      // đồng thời không thể xóa Answer của một request đang nộp.
+      const questions = await tx.question.findMany({
+        where: { quizId },
+        orderBy: { order: "asc" },
+        select: { id: true, choices: { select: { id: true, isCorrect: true } } },
+      });
+      if (questions.length === 0) {
+        throw new AppError(409, "Quiz này chưa có câu hỏi nào");
+      }
+
+      const questionIds = new Set(questions.map((q: { id: number }) => q.id));
+      if (answers.some((answer) => !questionIds.has(answer.questionId))) {
+        throw new AppError(400, "Bài làm chứa câu hỏi không thuộc quiz này");
+      }
+
+      const submissions = await tx.quizSubmission.findMany({
+        where: { quizId, studentId: viewer.id },
+        select: { score: true },
+      });
+      if (submissions.some((submission: { score: number }) => submission.score >= access.quiz.passScore)) {
+        throw new AppError(409, "Bạn đã đạt quiz này nên không cần làm lại");
+      }
+      if (access.quiz.maxAttempts !== null && submissions.length >= access.quiz.maxAttempts) {
+        throw new AppError(409, "Bạn đã dùng hết số lượt làm bài cho quiz này");
+      }
+
+      const result = gradeQuiz(questions, answers);
+      const submission = await tx.quizSubmission.create({
+        data: {
+          studentId: viewer.id,
+          quizId,
+          score: result.score,
+          correctCount: result.correctCount,
+          totalQuestions: result.totalQuestions,
+          attemptNo: submissions.length + 1,
+          answers: {
+            create: result.answers.map((answer) => ({
+              questionId: answer.questionId,
+              choiceId: answer.choiceId,
+              isCorrect: answer.isCorrect,
+            })),
+          },
         },
-      },
-      select: { id: true },
+        select: { id: true },
+      });
+      return submission.id;
     });
 
-    return getSubmission(submission.id, viewer);
+    return getSubmission(submissionId, viewer);
   } catch (err: unknown) {
     // @@unique([studentId, quizId, attemptNo]) chặn double-submit khi người dùng
     // bấm nộp hai lần thật nhanh: request thứ hai dính P2002 thay vì tạo bài trùng.
@@ -446,6 +476,9 @@ export async function getSubmission(submissionId: number, viewer: Viewer) {
 
 /** Lịch sử các lượt làm bài của chính học viên đang đăng nhập. */
 export async function listMySubmissions(quizId: number, viewer: Viewer) {
+  if (viewer.role !== "student") {
+    throw new AppError(403, "Chỉ học viên mới có lịch sử làm bài");
+  }
   await resolveQuizAccess(quizId, viewer); // đảm bảo quiz tồn tại
 
   return prisma.quizSubmission.findMany({

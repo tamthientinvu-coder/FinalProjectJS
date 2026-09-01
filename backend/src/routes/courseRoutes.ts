@@ -99,7 +99,7 @@ router.patch(
 router.get("/:id/learn", validateId(), authenticate, lessonController.getLearnView);
 
 // Đăng ký học khóa miễn phí
-router.post("/:id/enroll", validateId(), authenticate, enrollmentController.enroll);
+router.post("/:id/enroll", validateId(), authenticate, authorize("student"), enrollmentController.enroll);
 
 // ---------- Thống kê khóa học ----------
 

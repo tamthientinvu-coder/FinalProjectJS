@@ -171,10 +171,9 @@ export default function QuizEditorPage() {
       };
 
       if (view?.isLocked && view.quiz) {
-        // Đã có người nộp bài -> chỉ sửa được thông tin chung
+        // Điểm đạt là một phần của lịch sử chấm; chỉ tên và số lượt làm còn đổi được.
         await quizApi.updateMeta(view.quiz.id, {
           title: payload.title,
-          passScore: payload.passScore,
           maxAttempts: payload.maxAttempts,
         });
       } else {
@@ -297,7 +296,8 @@ export default function QuizEditorPage() {
             fullWidth
             value={passScore}
             onChange={(e) => setPassScore(Number(e.target.value))}
-            helperText="Từ 0 đến 100"
+            disabled={locked}
+            helperText={locked ? "Đã có bài nộp nên điểm đạt được giữ cố định" : "Từ 0 đến 100"}
           />
           <TextField
             select
