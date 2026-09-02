@@ -347,7 +347,7 @@ docker compose -f docker-compose.full.yml up --build
 |---|---|
 | Frontend (nginx) | http://localhost:8080 |
 | Backend API | http://localhost:3000 |
-| PostgreSQL | localhost:5432 |
+| PostgreSQL | *(không mở ra ngoài — chỉ backend trong mạng Docker nội bộ mới truy cập được ở `db:5432`, giống hệt cách Render không cho truy cập DB từ bên ngoài)* |
 
 5. **Nạp dữ liệu mẫu** — mở một cửa sổ Terminal khác (để cửa sổ đầu tiên tiếp tục chạy), gõ:
 
