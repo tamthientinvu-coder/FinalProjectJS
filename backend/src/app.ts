@@ -11,6 +11,13 @@ import prisma from "./utils/prisma";
 
 const app: Application = express();
 
+// Render (và các PaaS tương tự) đặt backend sau một reverse proxy: request thật đi qua
+// proxy trước, Express chỉ thấy IP của proxy trừ khi được báo "tin proxy ở tầng đầu tiên".
+// Thiếu dòng này, express-rate-limit tính rate limit theo IP của proxy (dùng chung cho
+// MỌI người dùng) thay vì IP thật của từng client -> giới hạn sai, dễ khóa nhầm hàng loạt.
+// (phát hiện ở vòng review 02/09/2026, mục V3 - "trust proxy")
+app.set("trust proxy", 1);
+
 // 1) Bảo mật header (Bài 6)
 app.use(helmet());
 
