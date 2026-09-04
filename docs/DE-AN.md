@@ -19,7 +19,7 @@
 
 LearnQuiz là nền tảng học trực tuyến quy mô nhỏ theo mô hình **ba vai trò**: giảng viên soạn khóa học gồm nhiều bài học kèm quiz trắc nghiệm, quản trị viên duyệt khóa học trước khi công khai, học viên đăng ký học, làm quiz và theo dõi tiến độ. Hệ thống được xây dựng theo kiến trúc **client–server tách rời**, giao tiếp qua **RESTful API** có phiên bản (`/api/v1`), xác thực bằng **JWT hai token**, và triển khai lên hạ tầng cloud (Vercel + Render).
 
-Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, hợp đồng API và toàn bộ quá trình thực hiện qua sáu sprint — **tất cả đã hoàn tất**: nghiệp vụ đủ ba vai trò của đề tài, ba tính năng AI dùng Google Gemini, đóng gói Docker hai giai đoạn, tích hợp liên tục bằng GitHub Actions và cấu hình triển khai lên Render + Vercel. Backend có **344 phép khẳng định** và frontend có **10 unit test**, hiện lần lượt đạt 344/344 và 10/10. Hướng dẫn triển khai chi tiết ở [`DEPLOY.md`](DEPLOY.md).
+Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, hợp đồng API và toàn bộ quá trình thực hiện qua sáu sprint — **tất cả đã hoàn tất**: nghiệp vụ đủ ba vai trò của đề tài, ba tính năng AI dùng Google Gemini, đóng gói Docker hai giai đoạn, tích hợp liên tục bằng GitHub Actions và cấu hình triển khai lên Render + Vercel. Backend có **344 phép khẳng định** và frontend có **13 unit test**, hiện lần lượt đạt 344/344 và 13/13. Hướng dẫn triển khai chi tiết ở [`DEPLOY.md`](DEPLOY.md).
 
 ---
 
@@ -400,7 +400,7 @@ Hai điều này được **kiểm chứng tự động**: bộ test gọi HTTP 
 
 **Bảo mật** — `git log --all --full-history -- .env` cho kết quả rỗng · `npm audit` không còn lỗ hổng critical/high · `helmet()` đã bật · rate limit cho `/auth/*` và `/ai/*` · không response nào chứa `password` hay `refreshToken` · `NODE_ENV=production` trên Render.
 
-**Chất lượng mã** — không còn `console.log` rải rác · không dùng `any` vô cớ · mọi route async đều `try/catch` + `next(err)` · `npm run build` sạch lỗi ở cả hai dự án · backend test đạt 324/324 · frontend test đạt 10/10.
+**Chất lượng mã** — không còn `console.log` rải rác · không dùng `any` vô cớ · mọi route async đều `try/catch` + `next(err)` · `npm run build` sạch lỗi ở cả hai dự án · backend test đạt 344/344 · frontend test đạt 13/13.
 
 **Quan sát được** — pino log JSON có `redact` · `requestLogger` ghi method, path, status, thời gian xử lý · log forward sang Better Stack.
 

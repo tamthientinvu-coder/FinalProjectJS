@@ -1,8 +1,25 @@
-# HƯỚNG DẪN KIỂM TRA BẰNG TAY (V4) — LEARNQUIZ
+# HƯỚNG DẪN KIỂM THỬ THỦ CÔNG TOÀN BỘ (V5) — LEARNQUIZ
 
 **Đối tượng:** đúng phần mà môi trường review cloud KHÔNG chạy được — cần Docker Desktop + trình duyệt thật + (tùy chọn) API key Gemini còn hạn mức, đều chỉ có trên máy cha.
-**Mốc mã nguồn áp dụng:** `e99e1d4` (đã push) hoặc mới hơn.
+**Mốc mã nguồn đã đối chiếu lại:** `3db08fc`, nhánh `main`, ngày 04/09/2026.
 **Nguyên tắc:** làm đúng thứ tự — dựng CSDL thật trước, xong mới chạy kịch bản. Mỗi bước có "Kỳ vọng" — lệch kỳ vọng thì dừng lại, ghi vào bảng cuối, không tự đoán là lỗi thao tác.
+
+## Kết quả kiểm tra kỹ thuật ngày 04/09/2026
+
+| Cổng kiểm tra | Kết quả |
+|---|---|
+| Git | `main` đồng bộ `origin/main`; worktree sạch trước khi cập nhật tài liệu này |
+| Backend | toàn bộ suite đạt; lint đạt; build TypeScript đạt |
+| Frontend | 13/13 unit test đạt; lint đạt; build production đạt |
+| Playwright Chromium | 3/3 ca điều hướng và phân quyền đạt |
+| Prisma | schema hợp lệ |
+| Docker Compose | cấu hình hợp lệ; PostgreSQL 16 ở cổng 5433, Adminer 8080 |
+| Frontend audit | 0 lỗ hổng được npm báo cáo |
+| Backend audit | 3 cảnh báo `moderate` qua chuỗi `express -> body-parser -> qs`; cần đánh giá/vá riêng rồi chạy hồi quy |
+| Production API | `/health` trả `status=ok`, `db=up` |
+| Production frontend | HTTP 200 từ Vercel |
+
+Số lượng test trong `README.md` và `docs/DE-AN.md` đã được đồng bộ về backend 344/344 và frontend 13/13. HTTP 200 production chỉ là smoke hạ tầng, chưa thay thế kiểm thử đăng nhập, CORS, dữ liệu và giao diện bằng trình duyệt.
 
 ---
 
@@ -195,7 +212,342 @@ Mở `https://final-project-js-ten.vercel.app` trên trình duyệt, F12 → tab
 
 ---
 
-## 6. Bảng ghi kết quả (tự điền tay)
+## 5bis. Quy tắc an toàn và cách ghi bằng chứng
+
+### 5bis.1. An toàn dữ liệu
+
+1. `backend/prisma/seed.ts` xóa dữ liệu khóa học, bài học, đăng ký, tiến độ, bài nộp và đáp án trước khi tạo lại. Chỉ seed CSDL local hoặc CSDL tạm được phép xóa.
+2. Không chạy `npm run seed:prod` nếu chưa xác nhận CSDL production rỗng hoặc có thể hủy.
+3. Không thử khóa user, xóa category, nộp dữ liệu giả hoặc test đồng thời trên production.
+4. Không chụp hoặc dán JWT, refresh token, Gemini key, DATABASE_URL và secret vào báo cáo.
+5. Không tin sẵn `courseId=1`, `lessonId=1`, `quizId=1`; luôn lấy ID thật từ URL, Network hoặc API.
+
+### 5bis.2. Trạng thái ca kiểm thử
+
+- `PASS`: kết quả đúng hoàn toàn.
+- `FAIL`: khác kỳ vọng và tái hiện được.
+- `BLOCKED`: không chạy được vì môi trường hoặc ca trước thất bại.
+- `NOT RUN`: chưa thực hiện.
+
+Với mỗi `FAIL`, ghi commit, local/production, trình duyệt, kích thước màn hình, vai trò, điều kiện đầu, bước tái hiện, kết quả thực tế, kết quả mong đợi, ảnh/video và request/response Network đã che bí mật.
+
+---
+
+## 6. Kiểm tra trang công khai, xác thực và phiên đăng nhập
+
+### P1 — Trang chủ và menu
+
+1. Mở cửa sổ ẩn danh ở `http://localhost:5173`.
+2. Nhấn `Ctrl+F5`, mở Console và Network.
+3. Kiểm tra logo, menu, nội dung chính, link đăng nhập/đăng ký.
+4. Nhấn logo từ một trang con.
+
+**Kỳ vọng:** trang không trắng; logo về `/`; không có lỗi đỏ; khách không thấy thao tác riêng của Student/Instructor/Admin.
+
+### P2 — Danh sách khóa học
+
+1. Mở `/courses` khi chưa đăng nhập.
+2. Tìm `JavaScript`.
+3. Chọn category `Ngôn ngữ lập trình` và level `Người mới bắt đầu`.
+4. Đổi sắp xếp mới nhất/cũ nhất/theo tên nếu giao diện có.
+5. Xóa từng bộ lọc và thử từ khóa không có kết quả.
+
+**Kỳ vọng:** chỉ khóa `published` xuất hiện; nhiều bộ lọc kết hợp đúng; trạng thái rỗng rõ ràng; xóa lọc khôi phục danh sách; phân trang không lặp/mất khóa.
+
+### P3 — Chi tiết khóa khi là khách
+
+1. Mở khóa JavaScript.
+2. Kiểm tra tên, mô tả, ảnh, category, level, instructor và tiêu đề bài học.
+3. Thử bắt đầu học và gõ trực tiếp `/learn/<courseId>`.
+
+**Kỳ vọng:** dữ liệu công khai hiện đúng; nội dung/video bài chưa bị lộ; route cần đăng nhập đưa về `/login`.
+
+### P4 — Route không tồn tại
+
+Mở `/duong-dan-khong-ton-tai-qa`, sau đó dùng nút về trang chủ.
+
+**Kỳ vọng:** trang 404 thân thiện, không stack trace; nút hoạt động.
+
+### AU1 — Đăng ký hợp lệ
+
+1. Mở `/register`.
+2. Đăng ký Student mới, tên từ 2 ký tự, email mới, mật khẩu từ 6 ký tự.
+3. Lặp lại với Instructor mới.
+
+**Kỳ vọng:** tạo đúng role; không có lựa chọn Admin; email được chuẩn hóa; Instructor vào được `/instructor/courses`, Student vào được `/my-courses`.
+
+### AU2 — Validation đăng ký
+
+Thử riêng từng dữ liệu:
+
+| Dữ liệu | Kỳ vọng |
+|---|---|
+| Tên trống hoặc 1 ký tự | báo bắt buộc/tối thiểu 2 ký tự |
+| Email sai định dạng | báo email không hợp lệ |
+| Email đã tồn tại | báo xung đột thân thiện, không 500 |
+| Mật khẩu 5 ký tự | báo tối thiểu 6 ký tự |
+| Sửa request thành `role=admin` | 400; không tạo Admin |
+
+### AU3 — Đăng nhập, đăng xuất và Back
+
+1. Đăng nhập lần lượt ba vai trò seed.
+2. Mỗi lần kiểm tra tên, role, menu và dashboard.
+3. Đăng xuất rồi nhấn Back.
+
+**Kỳ vọng:** điều hướng đúng vai trò; logout xóa phiên; Back không mở lại dữ liệu bảo vệ.
+
+### AU4 — Không dò được email
+
+Thử email không tồn tại và email đúng/mật khẩu sai.
+
+**Kỳ vọng:** hai trường hợp dùng thông báo chung; không tiết lộ email nào tồn tại.
+
+### AU5 — Ma trận route bảo vệ
+
+| Người dùng | URL | Kỳ vọng |
+|---|---|---|
+| Khách | `/my-courses` | về `/login` |
+| Instructor | `/my-courses` | về `/403` |
+| Student | `/instructor/courses` | về `/403` |
+| Student/Instructor | `/admin`, `/admin/users` | về `/403` |
+| Admin | `/admin`, `/instructor/courses` | vào được |
+
+### AU6 — Refresh token
+
+1. Đăng nhập Student, mở DevTools Network.
+2. Chờ access token hết hạn hoặc dùng cấu hình local có thời hạn ngắn.
+3. Mở trang tạo nhiều request đồng thời.
+4. Lặp lại khi refresh token sai/hết hạn.
+
+**Kỳ vọng:** chỉ một request refresh phục vụ hàng đợi; request chờ tiếp tục; refresh thất bại thì toàn bộ hàng đợi bị reject và user trở về login, không treo vô hạn.
+
+---
+
+## 7. Kiểm tra Học viên chi tiết
+
+Ngoài Kịch bản 1 ở mục 2, chạy thêm các ca sau.
+
+### S10 — Enroll và chống bấm lặp
+
+1. Chọn một khóa chưa enroll.
+2. Mở Network, nhấn nhanh `Đăng ký học` hai lần.
+3. Reload và mở `Khóa học của tôi`.
+
+**Kỳ vọng:** đúng một enrollment; request thứ hai bị chặn có kiểm soát; không 500; tiến độ ban đầu hợp lý.
+
+### S11 — Lộ trình học ở cả UI và API
+
+1. Khi chưa hoàn thành bài 1, thử mở bài 2 bằng menu.
+2. Gõ URL/API trực tiếp của bài 2.
+3. Hoàn thành bài 1, mở bài 2.
+4. Bỏ hoàn thành bài 1 và thử lại.
+
+**Kỳ vọng:** backend chặn đường vòng; hoàn thành bài trước mở bài sau; bỏ hoàn thành khóa lại các bài phụ thuộc; lịch sử quiz cũ không bị xóa.
+
+### S12 — Tiến độ
+
+1. Ghi tổng số bài `N`.
+2. Hoàn thành lần lượt từng bài, sau mỗi lần reload trang học và `Khóa học của tôi`.
+3. Bỏ hoàn thành một bài.
+
+**Kỳ vọng:** phần trăm bằng `số bài hoàn thành / N`; bền vững sau reload; không NaN, âm hoặc trên 100%; 100% chỉ khi đủ bài.
+
+### S13 — Quiz, lượt làm và điểm tốt nhất
+
+1. Trước khi nộp, tìm `isCorrect` và từ `correct` trong response GET quiz.
+2. Làm một lượt thấp điểm, một lượt cao hơn nhưng chưa đạt, rồi một lượt đạt.
+3. Kiểm số lượt, `canAttempt`, nút Làm lại và điểm trong `Khóa học của tôi`.
+4. Dùng Student 2 gõ URL kết quả của Student 1.
+
+**Kỳ vọng:** không lộ đáp án trước nộp; attemptNo tăng; dùng điểm tốt nhất để tổng hợp; sau đạt không làm lại; Student 2 nhận 403.
+
+### S14 — Trạng thái nội dung bất thường
+
+Kiểm bài không video, quiz không tồn tại, khóa không có bài và mạng bị ngắt lúc tải.
+
+**Kỳ vọng:** empty/error/loading state rõ ràng; không màn hình trắng, không khung video hỏng và không loading vô hạn.
+
+---
+
+## 8. Kiểm tra Giảng viên chi tiết
+
+Ngoài Kịch bản 2 ở mục 2, chạy thêm:
+
+### I10 — CRUD khóa và validation biên
+
+1. Tạo khóa với tên 4 ký tự, thumbnail sai URL và category không hợp lệ.
+2. Tạo hợp lệ với tên từ 5 ký tự, mô tả, thumbnail, category và level.
+3. Reload, sửa khóa của mình.
+4. Instructor 2 gõ URL sửa khóa của Instructor 1.
+
+**Kỳ vọng:** dữ liệu sai bị chặn đúng trường; khóa mới là `draft`; dữ liệu bền vững; sửa khóa người khác bị 403 ở backend.
+
+### I11 — CRUD và sắp xếp bài
+
+1. Tạo ba bài A-B-C; thử tiêu đề 2 ký tự và video URL sai.
+2. Đổi thành C-A-B, reload và xem bằng Student.
+3. Sửa bài B.
+4. Hủy một dialog xóa; xác nhận xóa một bài chưa có lịch sử.
+
+**Kỳ vọng:** validation đúng; thứ tự nhất quán và không trùng; Hủy không xóa; thao tác được lưu sau reload.
+
+### I12 — Validation quiz đầy đủ
+
+Thử: 3/5 đáp án; 0/2 đáp án đúng; câu dưới 5 ký tự; quiz rỗng; passScore -1/101; maxAttempts 0/21; sau đó lưu dữ liệu hợp lệ.
+
+**Kỳ vọng:** mỗi câu đúng 4 đáp án và đúng 1 đáp án đúng; quiz 1–50 câu; passScore 0–100; maxAttempts rỗng hoặc 1–20.
+
+### I13 — Lịch sử đã phát sinh
+
+1. Cho Student nộp quiz và hoàn thành bài.
+2. Thử sửa câu/đáp án, đổi passScore, xóa quiz, xóa bài và xóa khóa liên quan.
+3. Thử sửa metadata được phép như tên quiz/số lượt.
+
+**Kỳ vọng:** không hard-delete hoặc thay đổi quy tắc làm sai lịch sử; thao tác bị chặn 409; metadata được phép vẫn lưu; bài nộp cũ còn đọc được.
+
+### I14 — Thống kê lớp
+
+1. Chuẩn bị hai Student có tiến độ và điểm khác nhau.
+2. Đối chiếu số enroll, số bài, số quiz, tổng lượt nộp, tiến độ trung bình, điểm trung bình, điểm cao nhất và tỷ lệ đạt.
+3. Instructor khác mở URL thống kê; Admin mở lại.
+
+**Kỳ vọng:** số liệu tính tay khớp; Instructor khác 403; Admin xem được; lớp rỗng hiện 0/null hợp lý, không NaN.
+
+---
+
+## 9. Kiểm tra Quản trị chi tiết
+
+Ngoài Kịch bản 3 ở mục 2, chạy thêm:
+
+### A5 — Dashboard
+
+Đếm user theo role, khóa theo status, enroll, submission và top khóa nhiều học viên; đối chiếu với dữ liệu vừa tạo.
+
+**Kỳ vọng:** số liệu nhất quán; khóa chưa published không lọt vào top public; dữ liệu rỗng không NaN.
+
+### A6 — Hàng đợi và máy trạng thái
+
+1. Lọc/tìm theo tên khóa và Instructor.
+2. Duyệt pending, thử duyệt lại published.
+3. Từ chối không lý do, lý do 9 ký tự, rồi lý do 10–500 ký tự.
+4. Gỡ published thiếu lý do rồi gỡ với lý do hợp lệ.
+
+**Kỳ vọng:** chỉ pending được duyệt/từ chối; lý do ngắn bị 400; published → draft khi gỡ; lý do được lưu và Instructor nhìn thấy.
+
+### A7 — Category
+
+1. Tạo tên từ 2 ký tự, để slug trống.
+2. Tạo slug thủ công chỉ chữ thường, số, gạch ngang.
+3. Thử slug có dấu cách, chữ hoa, tiếng Việt, ký tự đặc biệt và slug trùng.
+4. Sửa; xóa category rỗng; thử xóa category đang có khóa.
+
+**Kỳ vọng:** slug tự sinh đúng; slug sai/trùng bị chặn; category rỗng xóa được; category đang dùng bị 409.
+
+### A8 — User và thu hồi phiên
+
+1. Tìm/lọc user theo tên, email, role và active.
+2. Kiểm response không có `password`/`refreshToken`.
+3. Khóa Student 2 đang đăng nhập ở tab khác; dùng access token cũ gọi API; thử refresh và login.
+4. Mở khóa rồi login lại.
+
+**Kỳ vọng:** token cũ bị chặn ngay; refresh token bị thu hồi; login bị từ chối khi khóa; mở khóa khôi phục truy cập.
+
+---
+
+## 10. Khả năng chịu lỗi, responsive và accessibility
+
+### R1 — Backend/DB gián đoạn
+
+1. Đang ở danh sách khóa, dừng backend local rồi thao tác.
+2. Khởi động lại và thử lại.
+3. Dừng riêng DB, gọi `/health` và API dữ liệu, sau đó khởi động lại.
+
+**Kỳ vọng:** UI báo lỗi mạng thân thiện; không trắng/treo; health phản ánh DB down; không lộ stack hoặc connection string; phục hồi được.
+
+### R2 — Double-click
+
+Bấm nhanh hai lần ở đăng nhập, đăng ký, enroll, hoàn thành bài, nộp quiz, lưu course/lesson/quiz và duyệt khóa.
+
+**Kỳ vọng:** nút disable/loading; không có dữ liệu trùng hoặc chuyển trạng thái hai lần.
+
+### R3 — Reload/deep link
+
+Reload trực tiếp mọi route chính ở local preview và Vercel.
+
+**Kỳ vọng:** SPA rewrite hoạt động; không 404 web server; phiên và quyền khôi phục đúng.
+
+### U1 — Ma trận màn hình
+
+Chạy trang login, register, course list/detail, learn, quiz/result, instructor editor/stats và bốn trang admin ở 360x800, 390x844, 768x1024 và 1366x768.
+
+**Kỳ vọng:** không cuộn ngang ngoài chủ đích; nút/dialog không bị che; bảng xem được; chuỗi dài không phá layout.
+
+### U2 — Bàn phím và focus
+
+Chỉ dùng Tab/Shift+Tab/Enter/Space/Escape qua form, menu và dialog.
+
+**Kỳ vọng:** focus nhìn thấy; thứ tự hợp lý; focus nằm trong dialog; Escape/Hủy không chạy thao tác phá hủy.
+
+### U3 — Zoom, label và màu
+
+Zoom 200%, submit form rỗng và xem trạng thái đúng/sai quiz.
+
+**Kỳ vọng:** không chồng chữ; input có label; lỗi gắn đúng trường; đúng/sai không chỉ phân biệt bằng màu.
+
+### U4 — XSS và chuỗi dài
+
+Trên local, nhập tiếng Việt, dấu nháy, `<script>alert(1)</script>` và chuỗi sát giới hạn vào tên/mô tả/nội dung.
+
+**Kỳ vọng:** hiển thị như văn bản, không chạy script; giới hạn ký tự đúng; layout không vỡ.
+
+---
+
+## 11. Cổng chất lượng phải chạy trên đúng commit
+
+```powershell
+cd C:\Users\vutam\Desktop\FinalProject\backend
+rtk npm run lint
+rtk npm run typecheck
+rtk npm test
+rtk npm run build
+rtk npx prisma validate
+rtk npm audit --audit-level=high
+
+cd C:\Users\vutam\Desktop\FinalProject\frontend
+rtk npm run lint
+rtk npm run typecheck
+rtk npm test
+rtk npm run test:e2e
+rtk npm run build
+rtk npm audit --audit-level=high
+```
+
+**Tiêu chí:** không lint/type/build error; backend đạt toàn suite; frontend 13/13; Playwright 3/3; Prisma hợp lệ; không critical/high vulnerability. Mọi moderate phải có quyết định vá hoặc chấp nhận rủi ro có lý do. Nếu chạy `npm audit fix`, phải kiểm diff/lockfile rồi chạy lại toàn bộ cổng.
+
+---
+
+## 12. Ma trận truy vết yêu cầu tốt nghiệp
+
+| Yêu cầu | Ca xác nhận |
+|---|---|
+| Student xem/lọc khóa | P2 |
+| Enroll miễn phí | S1–S3, S10, T9 |
+| Học theo thứ tự | S4–S5, S11, T3 |
+| Tiến độ | S5, S12 |
+| Quiz và chấm server | S6–S9, S13, T1–T2 |
+| AI giải thích sai | S8, mục 4 |
+| Instructor CRUD khóa/bài | I1–I5, I10–I11 |
+| Instructor tạo quiz | I4, I12–I13 |
+| Instructor thống kê | I9, I14 |
+| Admin duyệt khóa | A1–A2, A6 |
+| Admin category | A3, A7 |
+| Admin user/thống kê | A4–A8 |
+| Phân quyền/bảo mật | AU5, T1–T12 |
+| Docker/production | mục 1, 5 và 11 |
+
+---
+
+## 13. Bảng ghi kết quả (tự điền tay)
 
 | Mục | Đạt / Không đạt | Ghi chú |
 |---|---|---|
@@ -207,8 +559,27 @@ Mở `https://final-project-js-ten.vercel.app` trên trình duyệt, F12 → tab
 | Gemini sống | | |
 | Smoke production | | |
 
+### Tổng hợp toàn bộ V5
+
+| Nhóm | PASS | FAIL | BLOCKED | NOT RUN | Ghi chú |
+|---|---:|---:|---:|---:|---|
+| Public | | | | | |
+| Auth/Session | | | | | |
+| Student | | | | | |
+| Instructor | | | | | |
+| Admin | | | | | |
+| API/Security | | | | | |
+| Gemini | | | | | |
+| Resilience | | | | | |
+| UI/Responsive/Accessibility | | | | | |
+| Production | | | | | |
+
+Chỉ kết luận **đủ để bảo vệ** khi không còn Blocker/Critical ở yêu cầu bắt buộc; ba vai trò hoàn tất luồng chính; chấm điểm server và không lộ đáp án được chứng minh qua Network/API; quyền sở hữu được chứng minh bằng request trực tiếp; và test/lint/build/Prisma đạt trên cùng commit.
+
+Chỉ kết luận **production-ready** khi ngoài các điều kiện trên còn có kiểm thử PostgreSQL/hosted thực, Gemini live, dependency risk đã xử lý, cấu hình dashboard Render/Vercel được xác minh và có phương án dữ liệu phù hợp.
+
 Xong bảng này, gửi lại đây (chụp ảnh hoặc gõ tay kết quả) — tôi cập nhật vào `docs/DE-AN.md`/`docs/BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md` và đổi kết luận từ "Đủ để bảo vệ, chưa đủ để tuyên bố production-ready" sang "Đạt đầy đủ" nếu mọi mục đều xanh — hoặc ghi finding mới nếu có mục không đạt.
 
 ---
 
-*Soạn ngày 02/09/2026, dựa trên code thật đã đọc trực tiếp ở commit `e99e1d4` (route, schema, response envelope) — không suy đoán từ tài liệu cũ.*
+*Soạn lần đầu ngày 02/09/2026; mở rộng và kiểm tra lại ngày 04/09/2026 trên commit `3db08fc` (route, schema, seed, test, build, Prisma, Docker config và smoke production).*
