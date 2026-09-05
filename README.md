@@ -3,7 +3,7 @@
 Đồ án tốt nghiệp **Lập trình Full-stack JavaScript — Khóa 312**, Trung Tâm Tin Học, ĐH KHTN TP.HCM.
 Đề tài số 4.
 
-📄 Tài liệu đồ án: **[`docs/DE-AN.md`](docs/DE-AN.md)** · 🧪 Kiểm thử thủ công V5: **[`docs/HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md`](docs/HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md)** · 🚀 Hướng dẫn triển khai: **[`docs/DEPLOY.md`](docs/DEPLOY.md)**
+📄 Tài liệu đồ án: **[`docs/DE-AN.md`](docs/DE-AN.md)** · 🧪 Kiểm thử thủ công V5: **[`docs/HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md`](docs/HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md)** · 🚀 Hướng dẫn triển khai: **[`docs/DEPLOY.md`](docs/DEPLOY.md)** · 📓 Nhật ký dự án: **[`docs/NHAT-KY-DU-AN.md`](docs/NHAT-KY-DU-AN.md)**
 
 🌐 **Đang chạy thật:** Frontend [final-project-js-ten.vercel.app](https://final-project-js-ten.vercel.app/) · Backend [learnquiz-api.onrender.com](https://learnquiz-api.onrender.com/) ([`/health`](https://learnquiz-api.onrender.com/health)) · Mã nguồn [github.com/tamthientinvu-coder/FinalProjectJS](https://github.com/tamthientinvu-coder/FinalProjectJS)
 
