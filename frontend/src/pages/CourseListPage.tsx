@@ -47,6 +47,10 @@ export default function CourseListPage() {
   const [searchInput, setSearchInput] = useState(search);
 
   useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
     categoryApi
       .list()
       .then((res) => setCategories(res.data.data))
