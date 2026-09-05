@@ -1,5 +1,11 @@
 # HƯỚNG DẪN KIỂM THỬ THỦ CÔNG TOÀN BỘ (V5) — LEARNQUIZ
 
+> ⚠️ **BẢN NÀY ĐÃ ĐƯỢC THAY THẾ.** Hướng dẫn hiện hành là
+> [`HUONG-DAN-KIEM-TRA-TAY.md`](HUONG-DAN-KIEM-TRA-TAY.md) (cập nhật 05/09/2026).
+> Giữ lại tệp này làm biên bản của đợt kiểm tra ngày 02–04/09/2026 — số liệu bên
+> trong là số liệu **tại thời điểm đó**, cố ý không sửa lùi.
+
+
 **Đối tượng:** đúng phần mà môi trường review cloud KHÔNG chạy được — cần Docker Desktop + trình duyệt thật + (tùy chọn) API key Gemini còn hạn mức, đều chỉ có trên máy cha.
 **Mốc mã nguồn đã đối chiếu lại:** `3db08fc`, nhánh `main`, ngày 04/09/2026.
 **Nguyên tắc:** làm đúng thứ tự — dựng CSDL thật trước, xong mới chạy kịch bản. Mỗi bước có "Kỳ vọng" — lệch kỳ vọng thì dừng lại, ghi vào bảng cuối, không tự đoán là lỗi thao tác.
