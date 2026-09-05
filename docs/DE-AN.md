@@ -19,7 +19,7 @@
 
 LearnQuiz là nền tảng học trực tuyến quy mô nhỏ theo mô hình **ba vai trò**: giảng viên soạn khóa học gồm nhiều bài học kèm quiz trắc nghiệm, quản trị viên duyệt khóa học trước khi công khai, học viên đăng ký học, làm quiz và theo dõi tiến độ. Hệ thống được xây dựng theo kiến trúc **client–server tách rời**, giao tiếp qua **RESTful API** có phiên bản (`/api/v1`), xác thực bằng **JWT hai token**, và triển khai lên hạ tầng cloud (Vercel + Render).
 
-Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, hợp đồng API và toàn bộ quá trình thực hiện qua sáu sprint — **tất cả đã hoàn tất**: nghiệp vụ đủ ba vai trò của đề tài, ba tính năng AI dùng Google Gemini, đóng gói Docker hai giai đoạn, tích hợp liên tục bằng GitHub Actions và cấu hình triển khai lên Render + Vercel. Backend có **344 phép khẳng định** và frontend có **13 unit test**, hiện lần lượt đạt 344/344 và 13/13. Hướng dẫn triển khai chi tiết ở [`DEPLOY.md`](DEPLOY.md).
+Tài liệu này trình bày phạm vi, kiến trúc, mô hình dữ liệu, hợp đồng API và toàn bộ quá trình thực hiện qua sáu sprint — **tất cả đã hoàn tất**: nghiệp vụ đủ ba vai trò của đề tài, ba tính năng AI dùng Google Gemini, đóng gói Docker hai giai đoạn, tích hợp liên tục bằng GitHub Actions và cấu hình triển khai lên Render + Vercel. Backend có **345 phép khẳng định** và frontend có **13 unit test**, hiện lần lượt đạt 345/345 và 13/13. Hướng dẫn triển khai chi tiết ở [`DEPLOY.md`](DEPLOY.md).
 
 ---
 
@@ -400,7 +400,7 @@ Hai điều này được **kiểm chứng tự động**: bộ test gọi HTTP 
 
 **Bảo mật** — `git log --all --full-history -- .env` cho kết quả rỗng · `npm audit` không còn lỗ hổng critical/high · `helmet()` đã bật · rate limit cho `/auth/*` và `/ai/*` · không response nào chứa `password` hay `refreshToken` · `NODE_ENV=production` trên Render.
 
-**Chất lượng mã** — không còn `console.log` rải rác · không dùng `any` vô cớ · mọi route async đều `try/catch` + `next(err)` · `npm run build` sạch lỗi ở cả hai dự án · backend test đạt 344/344 · frontend test đạt 13/13.
+**Chất lượng mã** — không còn `console.log` rải rác · không dùng `any` vô cớ · mọi route async đều `try/catch` + `next(err)` · `npm run build` sạch lỗi ở cả hai dự án · backend test đạt 345/345 · frontend test đạt 13/13.
 
 **Quan sát được** — pino log JSON có `redact` · `requestLogger` ghi method, path, status, thời gian xử lý · log forward sang Better Stack.
 
@@ -418,12 +418,12 @@ Chạy toàn bộ bằng `cd backend && npm test`. Không cần cơ sở dữ li
 | `tests/schema.test.ts` | Luật ra đề, luật nộp bài, bộ lọc quản trị, chống mass-assignment | 31 |
 | `tests/quizService.test.ts` | Nghiệp vụ quiz đầu-cuối: phân quyền, chấm điểm, giới hạn lượt, khóa sửa đề, chặn làm lại sau khi đã đạt | 49 |
 | `tests/gemini.test.ts` | Lớp gọi Gemini: JSON, lỗi mạng, quá thời gian, không lộ chi tiết lỗi | 18 |
-| `tests/adminService.test.ts` | Duyệt khóa học, quản lý người dùng, toàn bộ số liệu thống kê | 75 |
+| `tests/adminService.test.ts` | Duyệt khóa học, quản lý người dùng, toàn bộ số liệu thống kê (kể cả chống làm tròn trung gian khi tính điểm lớp) | 76 |
 | `tests/aiService.test.ts` | Ba tính năng AI: phân quyền, kiểm duyệt đầu ra, bộ nhớ đệm | 36 |
 | `tests/enrollmentService.test.ts` | Điểm quiz trung bình theo khóa học, lấy lượt có điểm cao nhất | 4 |
 | `tests/graduationRegression.test.ts` | Hồi quy theo review tốt nghiệp: khóa lộ trình bài học, đóng vòng duyệt nội dung, chặn hard-delete có dữ liệu học tập, bất biến còn ít nhất 1 admin, snapshot điểm đạt, completeness khi gửi duyệt | 16 |
 | `tests/api.test.ts` | Bảng định tuyến thật + gọi HTTP qua toàn bộ chuỗi middleware | 60 |
-| **Tổng** | | **344** |
+| **Tổng** | | **345** |
 
 Bảy khẳng định quan trọng nhất mà bộ test bảo vệ:
 
@@ -527,7 +527,7 @@ FinalProject/
 │  │  ├─ utils/                # prisma · jwt · logger · slugify
 │  │  ├─ app.ts                # lắp ráp Express
 │  │  └─ index.ts              # khởi động server + tắt an toàn
-│  ├─ tests/                   # 344 phép kiểm, chạy bằng `npm test`, không cần CSDL
+│  ├─ tests/                   # 345 phép kiểm, chạy bằng `npm test`, không cần CSDL
 │  └─ Dockerfile               # build hai tầng, image gọn cho production
 └─ frontend/
    ├─ vercel.json            # rewrite cho SPA: mọi đường dẫn trả index.html

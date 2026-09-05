@@ -225,6 +225,12 @@ function seed() {
   equal("khóa rỗng: tiến độ 0% chứ không NaN", emptyStats.progress.avgPercent, 0);
   equal("khóa rỗng: điểm trung bình null", emptyStats.classAvgScore, null);
 
+  section("G. KHÔNG LÀM TRÒN TRUNG GIAN KHI TÍNH ĐIỂM LỚP");
+  seed();
+  // Quiz A: (0 + 0 + 1)/3; quiz B: 1. Trung bình thật = 0.5 -> 1.
+  db.submissions.forEach((s, i) => { s.score = [0, 0, 1, 1][i]; });
+  equal("điểm lớp chỉ làm tròn một lần", (await statsService.getCourseStats(10, INSTRUCTOR)).classAvgScore, 1);
+
   report("adminService.test.ts");
 })().catch((e) => {
   console.error("LỖI NGOÀI DỰ KIẾN:", e);

@@ -75,7 +75,7 @@ Mật khẩu chung: **`123456`**
 | `npm run build` | Biên dịch TypeScript sang `dist/` |
 | `npm run typecheck` | Kiểm tra kiểu, không xuất file |
 | `npm run seed` | Tạo lại dữ liệu mẫu; xóa dữ liệu nghiệp vụ hiện có |
-| `npm test` | Chạy 344 phép kiểm thử — không cần cơ sở dữ liệu |
+| `npm test` | Chạy 345 phép kiểm thử — không cần cơ sở dữ liệu |
 | `npm run test:unit` | Chỉ chạy phần kiểm thử hàm thuần (nhanh nhất) |
 | `npx prisma migrate dev --name <tên>` | Tạo migration sau khi sửa `schema.prisma` |
 | `npx prisma studio` | Xem và sửa dữ liệu bằng giao diện web (CSDL cục bộ) |
@@ -98,7 +98,7 @@ Mật khẩu chung: **`123456`**
 - [x] **Sprint 2** — Bài học (soạn, sắp xếp thứ tự) · Đăng ký học · Học theo lộ trình · Tiến độ
 - [x] **Sprint 3** — Quiz: soạn đề, làm bài, server chấm điểm, xem lại đáp án, làm lại · 111 phép kiểm thử
 - [x] **Sprint 4** — Duyệt khóa học · Quản lý người dùng · Thống kê · 253 phép kiểm thử
-- [x] **Sprint 5** — Tích hợp Gemini · Docker · CI/CD · Deploy · 344 phép kiểm thử
+- [x] **Sprint 5** — Tích hợp Gemini · Docker · CI/CD · Deploy · 345 phép kiểm thử
 
 ---
 

@@ -19,9 +19,8 @@ function percent(part: number, total: number): number {
  * Thống kê một khóa học cho giảng viên sở hữu (và admin).
  *
  * Nguyên tắc về hiệu năng: KHÔNG lặp từng học viên rồi gọi truy vấn con.
- * Toàn bộ số liệu điểm lấy bằng hai lệnh groupBy - một theo quiz,
- * một theo học viên - rồi ghép lại trong bộ nhớ. Số truy vấn không đổi
- * dù lớp có 10 hay 10.000 học viên (tránh vấn đề N+1).
+ * Số liệu được tổng hợp theo quiz, học viên, cặp quiz-học viên và lượt đạt.
+ * Bốn truy vấn groupBy không tăng theo số quiz hoặc số học viên.
  */
 export async function getCourseStats(courseId: number, viewer: Viewer) {
   const course = await prisma.course.findUnique({
@@ -63,7 +62,7 @@ export async function getCourseStats(courseId: number, viewer: Viewer) {
     },
   });
 
-  // ---------- Số liệu điểm: hai lệnh groupBy, không phụ thuộc sĩ số ----------
+  // ---------- Bốn truy vấn tổng hợp, không gọi count riêng từng quiz ----------
   const [byQuiz, byStudent, byQuizStudent, passCounts] = await Promise.all([
     quizIds.length
       ? prisma.quizSubmission.groupBy({
@@ -71,6 +70,7 @@ export async function getCourseStats(courseId: number, viewer: Viewer) {
           where: { quizId: { in: quizIds } },
           _count: { _all: true },
           _avg: { score: true },
+          _sum: { score: true },
           _max: { score: true },
         })
       : Promise.resolve([]),
@@ -90,14 +90,18 @@ export async function getCourseStats(courseId: number, viewer: Viewer) {
           _count: { _all: true },
         })
       : Promise.resolve([]),
-    // Ngưỡng đạt khác nhau theo từng quiz nên phải đếm riêng từng quiz
-    Promise.all(
-      quizzes.map((q) =>
-        prisma.quizSubmission.count({ where: { quizId: q.id, score: { gte: q.passScore } } })
-      )
-    ),
+    quizIds.length
+      ? prisma.quizSubmission.groupBy({
+          by: ["quizId"],
+          where: {
+            OR: quizzes.map((q) => ({ quizId: q.id, score: { gte: q.passScore } })),
+          },
+          _count: { _all: true },
+        })
+      : Promise.resolve([]),
   ]);
 
+  const passCountByQuiz = new Map(passCounts.map((r) => [r.quizId, r._count._all]));
   const quizAgg = new Map(byQuiz.map((r) => [r.quizId, r]));
   const studentAgg = new Map(byStudent.map((r) => [r.studentId, r]));
 
@@ -127,7 +131,7 @@ export async function getCourseStats(courseId: number, viewer: Viewer) {
     };
   });
 
-  const quizStats = quizzes.map((q, index) => {
+  const quizStats = quizzes.map((q) => {
     const agg = quizAgg.get(q.id);
     const attempts = agg?._count._all ?? 0;
     return {
@@ -141,14 +145,14 @@ export async function getCourseStats(courseId: number, viewer: Viewer) {
       uniqueStudents: uniqueStudentsPerQuiz.get(q.id) ?? 0,
       avgScore: roundOrNull(agg?._avg.score),
       maxScore: agg?._max.score ?? null,
-      passCount: passCounts[index],
-      passRate: percent(passCounts[index], attempts),
+      passCount: (passCountByQuiz.get(q.id) ?? 0),
+      passRate: percent((passCountByQuiz.get(q.id) ?? 0), attempts),
     };
   });
 
   const totalSubmissions = quizStats.reduce((sum, q) => sum + q.attempts, 0);
-  const weightedScoreSum = quizStats.reduce(
-    (sum, q) => sum + (q.avgScore ?? 0) * q.attempts,
+  const weightedScoreSum = byQuiz.reduce(
+    (sum, q) => sum + (q._sum.score ?? 0),
     0
   );
 

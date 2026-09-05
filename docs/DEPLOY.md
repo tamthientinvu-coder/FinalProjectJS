@@ -375,7 +375,7 @@ docker compose -f docker-compose.full.yml down
 
 | Job | Nội dung |
 |---|---|
-| **backend** | `prisma validate` → `typecheck` → `lint` → `npm test` (344 phép kiểm) → `build` |
+| **backend** | `prisma validate` → `typecheck` → `lint` → `npm test` (345 phép kiểm) → `build` |
 | **frontend** | `typecheck` → `lint` → `npm test` (10 phép kiểm) → `build` production |
 | **security** | Chặn nếu `.env` từng bị commit · `npm audit` cả hai dự án |
 
@@ -433,7 +433,7 @@ Dùng `revert` chứ không `reset --hard` trên nhánh chung: `revert` tạo ra
 **Chất lượng mã**
 
 - [ ] `npm run build` sạch lỗi ở cả hai dự án
-- [ ] Backend `npm test` đạt 344/344 và frontend `npm test` đạt 10/10
+- [ ] Backend `npm test` đạt 345/345 và frontend `npm test` đạt 13/13
 - [ ] Không còn `console.log` rải rác
 - [ ] Mọi route async đều `try/catch` + `next(err)`
 
