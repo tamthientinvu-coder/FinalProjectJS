@@ -335,3 +335,19 @@ Commit trên cũng thêm `docs/HUONG-DAN-KIEM-TRA-TAY.md`, tự ghi ở dòng đ
 ### 3. Công cụ hỗ trợ
 
 `kiem-tra-learnquiz.ps1` (đặt ở Desktop, **cố ý để ngoài repo** để không làm đổi số tệp của dự án) chạy toàn bộ cổng tự động và in bảng ĐẠT/HỎNG: git sạch và đồng bộ · back-end lint/typecheck/test/build/prisma/audit · front-end lint/typecheck/vitest/playwright/build/audit · smoke production. Lưu ý kỹ thuật: phải ép `chcp 65001` và `[Console]::OutputEncoding = UTF8` trước khi gọi `npm`, nếu không dấu `✓` trong output bị vỡ và đếm ra 0.
+
+
+### 4. Đã đồng bộ lại số liệu Bảng 1.6 (chốt tại `3d5aa09`)
+
+| Hạng mục | Trước | Nay |
+|---|---|---|
+| Tổng tệp mã nguồn và cấu hình | 161 | **162** |
+| Mã nguồn front-end (trừ tệp kiểm thử) | 6.174 dòng / 52 tệp | **6.215 dòng** / 52 tệp |
+| Mã nguồn kiểm thử tự động | 1.993 dòng / 18 tệp | **2.078 dòng** / 18 tệp |
+| Slide 15 — tổng dòng TypeScript | 10.469 | **10.510** |
+
+Back-end (4.295 dòng / 58 tệp), CSDL (11 bảng · 3 kiểu liệt kê · 217 dòng), điểm cuối API (46), màn hình (21) và số phép khẳng định (345) không đổi.
+
+`SLIDE-BAO-VE-LearnQuiz.pptx` + `.pdf` đã xuất lại bằng PowerPoint (17 trang). `BAO-CAO-DO-AN-LearnQuiz.docx` đã sửa; **bản `.pdf` cần xuất tay** vì `ExportAsFixedFormat` qua COM vẫn treo trên máy này — mở Word, `File → Export → Create PDF/XPS`, không cần bấm `F9` vì ba mục lục đã được nướng sẵn.
+
+*Lưu ý cho lần sau:* ba con số này lệch lại mỗi khi có thay đổi mã nguồn. Bản hướng dẫn kiểm tra tay mới đã đi đúng hướng khi từ chối chép cứng số liệu — nếu còn thời gian sau bảo vệ, nên làm tương tự cho Bảng 1.6 hoặc thêm một bước kiểm tra tự động phát hiện lệch.
