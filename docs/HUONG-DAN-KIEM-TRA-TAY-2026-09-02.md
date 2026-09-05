@@ -522,7 +522,7 @@ npm run build
 npm audit --audit-level=high
 ```
 
-**Tiêu chí:** không lint/type/build error; backend đạt toàn suite; frontend 13/13; Playwright 3/3; Prisma hợp lệ; không critical/high vulnerability. Mọi moderate phải có quyết định vá hoặc chấp nhận rủi ro có lý do. Nếu chạy `npm audit fix`, phải kiểm diff/lockfile rồi chạy lại toàn bộ cổng.
+**Tiêu chí:** không lint/type/build error; backend đạt toàn suite; frontend 13/13; Playwright 6/6; Prisma hợp lệ; không critical/high vulnerability. Mọi moderate phải có quyết định vá hoặc chấp nhận rủi ro có lý do. Nếu chạy `npm audit fix`, phải kiểm diff/lockfile rồi chạy lại toàn bộ cổng.
 
 ---
 
