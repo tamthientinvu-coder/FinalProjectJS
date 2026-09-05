@@ -254,6 +254,30 @@ Dùng **khóa mới riêng cho mỗi vòng** để không phụ thuộc lịch s
 5. Không được hiển thị bản tóm tắt A dưới tiêu đề B hoặc dùng trạng thái A để ghi nhầm B. Ghi FAIL nếu tái hiện; kèm thứ tự request.
 6. Trả Network về No throttling.
 
+### S05 — Đổi từ khóa tìm kiếm liên tiếp và bấm Back *(hồi quy cho lỗi đã vá `d8bf9f0`)*
+
+Ca này dựng lại đúng một lỗi có thật đã được vá — người gõ nhanh từng thấy ô tìm kiếm tự nhảy về từ khóa cũ.
+
+1. Vào `/courses`. Gõ `JavaScript` vào ô **Tìm theo tên khóa học**, nhấn `Enter`.
+2. Kỳ vọng URL có `?search=JavaScript`, danh sách lọc theo từ này.
+3. **Ngay lập tức, không chờ kết quả về**, xóa và gõ `React`, nhấn `Enter`.
+4. Kỳ vọng URL đổi sang `?search=React`, ô tìm kiếm **vẫn giữ chữ `React`** — không được tự nhảy về `JavaScript`, và danh sách phải lọc theo `React`.
+5. Bấm nút **Back** của trình duyệt.
+6. Kỳ vọng URL trở về `?search=JavaScript`, ô tìm kiếm hiển thị lại `JavaScript`, danh sách lọc theo `JavaScript`. **Ba thứ — URL, ô tìm kiếm, danh sách kết quả — phải nói cùng một điều.**
+7. Bấm **Forward**: cả ba quay lại `React`.
+8. Lặp bước 1–6 với DevTools đặt Slow 3G để ép khe thời gian rộng ra.
+
+Ghi FAIL nếu ở bất kỳ bước nào ô tìm kiếm lệch với URL hoặc với danh sách. Ca tự động tương ứng: `e2e/role-routing.spec.ts` — *"Back khôi phục từ khóa trong ô tìm kiếm"*.
+
+### S06 — Sai mật khẩu phải giữ lỗi tại form *(hồi quy cho `axiosClient.ts`)*
+
+1. Vào `/login`, nhập email đúng nhưng mật khẩu sai, bấm **Đăng nhập**.
+2. Mở tab Network trước khi bấm.
+3. Kỳ vọng: thông báo lỗi hiện **tại form**, trang không tải lại, và **không** có request nào tới `/auth/refresh`.
+4. Lặp với email chưa từng đăng ký: thông báo không được tiết lộ email đó có tồn tại hay không.
+
+Trước đây `401` từ `/auth/login` kích hoạt vòng làm mới token vô ích rồi tải lại trang, làm mất luôn thông báo lỗi.
+
 ## 4. Giảng viên và quản trị sau khi có dữ liệu
 
 ### I04 — Bảo toàn lịch sử và vòng duyệt lại
@@ -424,6 +448,21 @@ Kiểm login/register, danh sách/chi tiết, học/quiz/kết quả, editor kh�
 
 ## 8. Build, kiểm thử tự động và triển khai
 
+### 8.0. Cách nhanh — một lệnh chạy hết phần tự động
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$HOME\Desktop\kiem-tra-learnquiz.ps1"
+```
+
+Script này (đặt ở Desktop, **cố ý để ngoài repo** để không làm đổi số tệp của dự án) chạy tuần tự: git sạch và đồng bộ → back-end `lint / typecheck / test / build / prisma validate / audit` → front-end `lint / typecheck / vitest / playwright / build / audit` → gọi thật `/health` và trang production; cuối cùng in một bảng ĐẠT/HỎNG.
+
+Hai lưu ý kỹ thuật đã trả giá mới rút ra được:
+
+1. **Phải ép UTF-8 trước khi gọi `npm`.** Trên PowerShell, `cmd /c npm test` trả output theo codepage 437 làm ký tự `✓` vỡ thành `?`, đếm ra 0 phép khẳng định dù test đạt hết. Phải đặt `[Console]::OutputEncoding = [Text.Encoding]::UTF8` và chèn `chcp 65001 >nul &` trước lệnh.
+2. **Script cố ý gọi `npm` trần, không qua `rtk`.** `rtk` nén và lọc output, mà script lại cần đếm chính xác số dấu `✓` và bắt dòng `Tests N passed` — lọc mất là hỏng phép đếm. Khi kiểm bằng tay thì cứ dùng `rtk` cho gọn; khi để máy đếm thì dùng lệnh trần.
+
+Script chỉ thay được phần tự động. Ba kịch bản giao diện, kiểm API trực tiếp và Gemini live vẫn phải bấm tay theo mục 1–7.
+
 ### 8.1. Chạy cổng chất lượng
 
 Ở backend:
@@ -451,7 +490,9 @@ rtk npm run build
 rtk npm audit
 ```
 
-Mỗi lệnh phải exit 0. Ghi số test từ output thật; không suy ra từ số ghi trong README. Playwright hiện dùng API mock, không kiểm chứng PostgreSQL. Không chạy `npm test` ở root vì root không có package.json.
+Mỗi lệnh phải exit 0. Ghi số test từ output thật; không suy ra từ số ghi trong README.
+
+Mốc đối chiếu tại `f9e7798` (ngày 05/09/2026) — **để so sánh, không phải để chép vào báo cáo**: back-end **345** phép khẳng định, front-end **13** ca Vitest, Playwright **6** ca. Lệch so với mốc này nghĩa là đã có thay đổi mã nguồn: đo lại và cập nhật hồ sơ, đừng sửa con số cho khớp. Playwright hiện dùng API mock, không kiểm chứng PostgreSQL. Không chạy `npm test` ở root vì root không có package.json.
 
 ### 8.2. Docker full-stack
 
@@ -494,6 +535,8 @@ Mỗi ca cần: commit + thay đổi chưa commit, ngày/giờ, môi trường, 
 | Quản trị khóa/category/user | A01–A03 |
 | AI | AI01–AI03 |
 | UI và phục hồi | S04, UI01–UI03 |
+| Đồng bộ URL ↔ giao diện khi Back/Forward | **S05** |
+| Xử lý lỗi đăng nhập tại form | **S06** |
 | Build/Docker/production | Mục 8 |
 
 Không kết luận đạt toàn bộ nếu còn ca bắt buộc BLOCKED/NOT RUN. Khi xong, cập nhật nhật ký bằng **kết quả thực tế**, không đổi toàn bộ checklist thành PASS chỉ vì test tự động xanh.

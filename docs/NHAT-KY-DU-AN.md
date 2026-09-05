@@ -351,3 +351,79 @@ Back-end (4.295 dòng / 58 tệp), CSDL (11 bảng · 3 kiểu liệt kê · 217
 `SLIDE-BAO-VE-LearnQuiz.pptx` + `.pdf` đã xuất lại bằng PowerPoint (17 trang). `BAO-CAO-DO-AN-LearnQuiz.docx` đã sửa; **bản `.pdf` cần xuất tay** vì `ExportAsFixedFormat` qua COM vẫn treo trên máy này — mở Word, `File → Export → Create PDF/XPS`, không cần bấm `F9` vì ba mục lục đã được nướng sẵn.
 
 *Lưu ý cho lần sau:* ba con số này lệch lại mỗi khi có thay đổi mã nguồn. Bản hướng dẫn kiểm tra tay mới đã đi đúng hướng khi từ chối chép cứng số liệu — nếu còn thời gian sau bảo vệ, nên làm tương tự cho Bảng 1.6 hoặc thêm một bước kiểm tra tự động phát hiện lệch.
+
+---
+
+## 2026-09-05 (chốt cuối ngày) — Đính chính lỗi `rtk`, bổ sung hướng dẫn, nghiệm thu toàn bộ
+
+### 1. Đính chính: `rtk` KHÔNG phải rác — con đã sửa sai
+
+Commit `57659c6` mang thông điệp *"sửa lỗi `rtk` thừa ở đầu 12 lệnh"* và đã xoá tiền tố `rtk` khỏi mục 11 của `HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md`. **Kết luận đó sai.** Kiểm chứng trên máy:
+
+```
+Get-Command rtk  ->  C:\Users\vutam\.local\bin\rtk.exe
+rtk --version    ->  rtk 0.37.1
+rtk npm --version ->  11.14.1   (exit 0)
+```
+
+`rtk` là **RTK Toolkit** — một CLI proxy nén và lọc output trước khi đưa vào ngữ cảnh của trợ lý AI, có bộ lọc riêng cho `npm`, `npx`, `tsc`, `lint`, `prisma`, `vitest`, `playwright`, `git`, `docker`… `rtk npm test` chạy y hệt `npm test`, chỉ khác là output gọn hơn. Bản hướng dẫn mới cũng nói rõ điều này ở mục 0.7 — con đã đọc lướt qua mà không kiểm chứng trước khi xoá.
+
+**Đã khôi phục** toàn bộ 12 dòng `rtk` trong mục 11, và thêm một khung giải thích `rtk` là gì để bản 02/09 tự đứng được, kèm câu *"máy nào không cài `rtk` thì bỏ tiền tố này đi"*.
+
+**Bài học:** một tiền tố lạ trong tài liệu của người khác không mặc nhiên là rác. Chạy `Get-Command` trước khi kết luận — mất năm giây, tránh được một commit sai đã đẩy lên GitHub.
+
+### 2. Bổ sung hướng dẫn kiểm tra thủ công
+
+`docs/HUONG-DAN-KIEM-TRA-TAY.md` — bốn phần thêm mới:
+
+**Mục 8.0 — chạy hết phần tự động bằng một lệnh.** Giới thiệu `kiem-tra-learnquiz.ps1`, kèm hai lưu ý kỹ thuật đã trả giá mới rút ra:
+
+- Phải ép UTF-8 (`chcp 65001` + `[Console]::OutputEncoding`) trước khi gọi `npm`, nếu không dấu `✓` vỡ theo codepage 437 và đếm ra 0 phép khẳng định dù test đạt hết.
+- Script cố ý gọi `npm` trần chứ không qua `rtk`: `rtk` nén output, mà script cần đếm chính xác số `✓` và bắt dòng `Tests N passed`. Kiểm bằng tay thì dùng `rtk` cho gọn; để máy đếm thì dùng lệnh trần.
+
+**Mục 8.1 — mốc đối chiếu.** Ghi rõ tại `f9e7798`: back-end 345, Vitest 13, Playwright 6 — kèm câu *"để so sánh, không phải để chép vào báo cáo; lệch nghĩa là đã có thay đổi mã nguồn, đo lại và cập nhật hồ sơ, đừng sửa con số cho khớp"*.
+
+**Ca S05 — đổi từ khóa liên tiếp rồi bấm Back.** Hồi quy cho đúng lỗi đã vá ở `d8bf9f0`. Tiêu chí nghiệm thu viết thẳng: *"ba thứ — URL, ô tìm kiếm, danh sách kết quả — phải nói cùng một điều"*. Có bước lặp với Slow 3G để ép khe thời gian rộng ra.
+
+**Ca S06 — sai mật khẩu giữ lỗi tại form.** Hồi quy cho thay đổi trong `axiosClient.ts`: `401` từ `/auth/login` không được kích hoạt vòng làm mới token; kiểm bằng tab Network, không được có request tới `/auth/refresh`.
+
+Cả hai ca đã thêm vào bảng truy vết yêu cầu ở mục 9.
+
+### 3. Nghiệm thu toàn bộ tại `f9e7798`
+
+| Cổng | Kết quả |
+|---|---|
+| Back-end lint / typecheck / build / prisma / audit | sạch |
+| Back-end phép khẳng định | **345 đạt / 0 hỏng** |
+| Front-end lint / typecheck / build / audit | sạch |
+| Front-end Vitest | **13/13** |
+| Playwright E2E | **6/6** (trước khi vá: 0/6) |
+| CI GitHub Actions trên `6969f8d` | **success** |
+| Production `/health` | `status=ok`, `db=up` |
+| Production front-end | HTTP 200 |
+
+**Hồ sơ nhất quán ở cả năm nơi** — mã nguồn · `.md` · DOCX · PPTX · PDF:
+
+| Hạng mục | Giá trị |
+|---|---|
+| Tổng tệp mã nguồn và cấu hình | 162 |
+| Back-end `src` | 4.295 dòng / 58 tệp |
+| Front-end `src` (trừ tệp kiểm thử) | 6.215 dòng / 52 tệp |
+| Mã nguồn kiểm thử | 2.078 dòng / 18 tệp |
+| Tổng dòng TypeScript (slide 15) | 10.510 |
+| CSDL | 11 bảng · 3 kiểu liệt kê · 9 ràng buộc duy nhất · 217 dòng |
+| Điểm cuối API | 46 |
+| Màn hình | 21 |
+| Phép khẳng định | 345 |
+
+Bản PDF báo cáo cha xuất lúc 14:44: **72 trang**, Producer *Microsoft Word*, danh mục hình vẽ 10 mục, danh mục bảng biểu 43 mục, không còn placeholder, không còn sót `161 tệp` / `6.174` / `1.993` / `344`.
+
+### 4. Việc còn treo
+
+| Việc | Trạng thái |
+|---|---|
+| Chỉ mục cho 4 cột khóa ngoại (`enrollments.course_id`, `quiz_submissions.quiz_id`, `choices.question_id`, `courses.instructor_id`) | Hoãn tới sau bảo vệ — phân tích đầy đủ ở mục 4.3 `DE-AN.md` |
+| 3 cảnh báo `moderate` chuỗi `express → body-parser → qs` | Đã ghi nhận, chấp nhận rủi ro có lý do |
+| Ba ca giao diện, kiểm API trực tiếp, Gemini live | Chưa chạy — cần cha bấm tay theo mục 1–7 |
+| CSDL Render Free hết hạn ~27/09/2026 | Xác nhận ngày bảo vệ nằm trước mốc này |
+| Số liệu Bảng 1.6 | Sẽ lệch lại ở lần sửa mã tiếp theo — báo con đồng bộ lượt cuối khi mã đóng băng |

@@ -512,21 +512,23 @@ Trên local, nhập tiếng Việt, dấu nháy, `<script>alert(1)</script>` và
 
 ```powershell
 cd C:\Users\vutam\Desktop\FinalProject\backend
-npm run lint
-npm run typecheck
-npm test
-npm run build
-npx prisma validate
-npm audit --audit-level=high
+rtk npm run lint
+rtk npm run typecheck
+rtk npm test
+rtk npm run build
+rtk npx prisma validate
+rtk npm audit --audit-level=high
 
 cd C:\Users\vutam\Desktop\FinalProject\frontend
-npm run lint
-npm run typecheck
-npm test
-npm run test:e2e
-npm run build
-npm audit --audit-level=high
+rtk npm run lint
+rtk npm run typecheck
+rtk npm test
+rtk npm run test:e2e
+rtk npm run build
+rtk npm audit --audit-level=high
 ```
+
+> **`rtk` là gì.** `rtk` (RTK Toolkit, hiện `0.37.1`, cài ở `C:\Users\vutam\.local\bin\rtk.exe`) là một CLI proxy nén và lọc bớt output trước khi đưa vào ngữ cảnh của trợ lý AI. Nó có sẵn các bộ lọc riêng cho `npm`, `npx`, `tsc`, `lint`, `prisma`, `vitest`, `playwright`, `git`, `docker`… Chạy `rtk npm test` cho kết quả y hệt `npm test`, chỉ khác là output gọn hơn. **Máy nào không cài `rtk` thì bỏ tiền tố này đi**, phần lệnh còn lại giữ nguyên.
 
 **Tiêu chí:** không lint/type/build error; backend đạt toàn suite; frontend 13/13; Playwright 6/6; Prisma hợp lệ; không critical/high vulnerability. Mọi moderate phải có quyết định vá hoặc chấp nhận rủi ro có lý do. Nếu chạy `npm audit fix`, phải kiểm diff/lockfile rồi chạy lại toàn bộ cổng.
 
