@@ -80,8 +80,79 @@ không sửa lùi, để giữ được dấu vết kiểm chứng.
 
 *Ghi chú trung thực:* `vitest` và `prisma validate` **không chạy được trong môi trường Linux dùng để rà soát lần này**, vì `node_modules` đã được cài trên Windows (thiếu native binding của `rolldown`, và Prisma không tải được engine do không có mạng). Đây là giới hạn của môi trường rà soát, **không phải lỗi dự án** — hai lệnh này vẫn xanh trên GitHub Actions và khi chạy trực tiếp trên máy Windows. Con số 13 unit test front-end lần này được **đếm tĩnh** từ mã nguồn chứ không phải từ lần chạy thật.
 
-### 6. Đề xuất tối ưu — chưa thực hiện, chờ quyết định
+### 6. Đề xuất tối ưu — đã khảo sát chi tiết, chưa thực hiện
 
-- **`Course.instructorId` chưa có chỉ mục.** Truy vấn "khóa học của tôi" (`InstructorCoursesPage`) lọc theo cột này. Thêm `@@index([instructorId])` vào `schema.prisma` là cải thiện đúng về mặt kỹ thuật, **nhưng** kéo theo một migration mới → phải chạy `prisma migrate deploy` trên Render. Với lượng dữ liệu demo hiện tại thì lợi ích không đo được, còn rủi ro triển khai sát ngày bảo vệ là có thật. **Khuyến nghị: hoãn tới sau buổi bảo vệ.**
-- Các cột khóa ngoại còn lại đều đã được chỉ mục gián tiếp qua ràng buộc `@@unique` (cột dẫn đầu), nên không thiếu chỉ mục ở chỗ nào khác.
-- Không tìm thấy `await` bên trong vòng lặp ở tầng service (đã rà `src/services/*.ts`) — không còn N+1 nào ngoài chỗ đã sửa ở commit `e63ad5c`.
+Xem phân tích đầy đủ ở mục 4.3 của [`DE-AN.md`](DE-AN.md). Tóm tắt: **PostgreSQL không tự tạo chỉ mục cho cột khóa ngoại phía con** (khác MySQL/InnoDB), và Prisma cũng chỉ tự thêm `@@index` khi lược đồ nhắm MySQL. Rà cả 15 cột khóa ngoại thì 8 cột đã được phủ (khóa chính, `@unique`, hoặc cột dẫn đầu của `@@unique` tổ hợp), **7 cột chưa**. Bốn cột nằm trên đường truy vấn thật, xếp theo lưu lượng:
+
+| # | Cột | Đường truy vấn | Bằng chứng |
+|---|---|---|---|
+| 1 | `enrollments.course_id` | `_count.enrollments` trên **mọi** trang danh sách khóa học (công khai · quản trị · giảng viên); thống kê lớp; xếp hạng khóa học | `courseService.ts:7-11` · `statsService.ts:53` · `adminService.ts:245` |
+| 2 | `quiz_submissions.quiz_id` | **bốn** `groupBy` liên tiếp ở trang thống kê lớp | `statsService.ts:66, 75, 85, 93` |
+| 3 | `choices.question_id` | mọi lần tải đề / nộp bài / xem lại đáp án; bảng `choices` không có chỉ mục nào ngoài khóa chính | `quizService.ts:88, 157, 175, 263, 340, 438` |
+| 4 | `courses.instructor_id` | danh sách khóa học của chính giảng viên; đếm `coursesTaught` ở trang quản lý người dùng | `courseService.ts:70-75` · `adminService.ts:20` |
+
+Ba cột còn lại (`lesson_progress.lesson_id`, `answers.question_id`, `answers.choice_id`) gần như chỉ nằm trên đường `ON DELETE CASCADE` khi xóa khóa học. Nhánh cascade `users → courses` thực tế **không bao giờ chạy** vì ứng dụng chỉ khóa tài khoản chứ không xóa người dùng.
+
+**Vì sao vẫn hoãn.** PostgreSQL đọc theo trang 8 KB; bảng chưa vượt một hai trang (~100–200 dòng hẹp) thì luôn quét tuần tự, có chỉ mục cũng không dùng. Dữ liệu seed hiện tại là 5 người dùng · 3 khóa học · 2 ghi danh → lợi ích đo được đúng bằng 0, trong khi mỗi chỉ mục tốn ~20–25 byte/dòng và làm chậm ghi. Thêm chỉ mục mà không có `EXPLAIN ANALYZE` chứng minh là tối ưu theo cảm tính.
+
+**Rủi ro triển khai — đính chính so với ghi chép ngày 05/09 buổi sáng.** Lần trước ghi là "phải chạy `prisma migrate deploy` trên Render, rủi ro sát ngày bảo vệ". Kiểm tra lại `render.yaml`: `buildCommand` là `npm ci --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build` — **không có `npm run seed`** (commit `b00309b` từng thêm, sau đó đã gỡ). Vậy deploy **không xóa dữ liệu**. `CREATE INDEX` trên bảng vài chục dòng chạy trong mili-giây, chỉ giữ khóa `SHARE` (chặn ghi, không chặn đọc); nếu migration hỏng thì build đỏ và Render giữ nguyên bản đang chạy. Rủi ro thật thấp hơn nhiều so với ghi chép ban đầu — lý do hoãn bây giờ là **lợi ích bằng 0**, không phải rủi ro.
+
+**Một cái giá cụ thể nếu làm ngay:** báo cáo và slide ghi *"11 bảng, 3 kiểu liệt kê, 217 dòng"*. Thêm bốn dòng `@@index` là `schema.prisma` thành 221 dòng → lại phải vá hồ sơ Office thêm một vòng.
+
+**Câu lệnh khi làm (sau bảo vệ):**
+
+```prisma
+model Course         { …  @@index([instructorId]) }
+model Enrollment     { …  @@index([courseId])     }
+model QuizSubmission { …  @@index([quizId])       }
+model Choice         { …  @@index([questionId])   }
+```
+
+```sql
+CREATE INDEX "courses_instructor_id_idx"    ON "courses"("instructor_id");
+CREATE INDEX "enrollments_course_id_idx"    ON "enrollments"("course_id");
+CREATE INDEX "quiz_submissions_quiz_id_idx" ON "quiz_submissions"("quiz_id");
+CREATE INDEX "choices_question_id_idx"      ON "choices"("question_id");
+```
+
+Không tìm thấy `await` bên trong vòng lặp ở tầng service — không còn N+1 nào ngoài chỗ đã sửa ở commit `e63ad5c`.
+
+---
+
+## 2026-09-05 (chiều) — Đưa phát hiện chỉ mục vào hồ sơ
+
+Sau khi khảo sát chi tiết (mục 6 ở trên), phát hiện được ghi vào hồ sơ thay vì sửa lược đồ:
+
+| Nơi | Thay đổi |
+|---|---|
+| `docs/DE-AN.md` | Thêm mục **4.3. Chiến lược đánh chỉ mục — và bảy khóa ngoại chưa được phủ**: giải thích vì sao PostgreSQL không tự đánh chỉ mục FK, bảng kiểm kê 8 cột đã phủ / 7 cột chưa, ngưỡng dữ liệu, và nghịch lý `status` được đánh chỉ mục còn `instructorId` thì không |
+| `BAO-CAO-DO-AN-LearnQuiz.docx` §5.9 | "Ba hạn chế cần nêu trung thực" → **"Bốn hạn chế"**, thêm mục thứ tư về bốn cột khóa ngoại chưa có chỉ mục |
+| `BAO-CAO-DO-AN-LearnQuiz.docx` Bảng 6.1 | Thêm hàng **"Đánh chỉ mục khóa ngoại — ưu tiên Cao"**, kèm yêu cầu đo `EXPLAIN ANALYZE` trước và sau |
+| `SLIDE-BAO-VE-LearnQuiz.pptx` slide 16 | Thêm gạch đầu dòng thứ tư trong khối "Hạn chế — nêu trung thực" |
+
+Báo cáo tăng từ **72 lên 73 trang** (Word tự cập nhật mục lục và ba danh mục).
+
+### Vì sao PDF báo cáo phải xuất tay
+
+Slide đã xuất lại tự động bằng PowerPoint COM, chạy tốt trong ~20 giây. Riêng Word thì `ExportAsFixedFormat` **treo vô hạn khi chạy qua COM** trên máy này — đã thử đủ sáu cách, mỗi lần Word mở tệp và đếm ra 73 trang trong 2 giây rồi đứng luôn ở bước xuất, tiến trình `WINWORD` chạy tới hơn 900 giây CPU:
+
+| Đã loại trừ | Cách kiểm chứng |
+|---|---|
+| Hộp thoại cập nhật trường mục lục | tắt `UpdateFieldsAtPrint`, `UpdateLinksAtPrint` — vẫn treo |
+| Máy in mặc định `Brother DCP-J100` đang `WorkOffline` | tạm đổi mặc định sang *Microsoft Print to PDF* rồi trả lại — vẫn treo |
+| Mark of the Web (tệp do cầu nối ghi xuống bị đánh dấu "tải từ Internet") | `Unblock-File`, xác nhận `ReadOnly=False` — vẫn treo |
+| Add-in của Word (Zotero, Copilot…) | khởi động `winword.exe /a` (không nạp add-in, không nạp `Normal.dotm`) — vẫn treo |
+| Bản thân hàm xuất PDF | đổi sang `SaveAs2(…, 17)` rồi `PrintOut` qua *Microsoft Print to PDF* — cả hai đều treo |
+| Tệp `.docx` hỏng | Word mở được, cập nhật mục lục được, `Save()` thành công, LibreOffice xuất được 69 trang bình thường |
+
+Kết luận: đây là giới hạn của Word khi bị điều khiển qua COM trên máy này, không phải lỗi tệp. Bản PDF do chính cha bấm *File → Export* ngày 01/09 chứng minh Word xuất được khi thao tác trong giao diện.
+
+**Việc cần cha làm (khoảng 30 giây):**
+
+1. Mở `docs/BAO-CAO-DO-AN-LearnQuiz.docx` bằng Word.
+2. `Ctrl + A` rồi `F9`; nếu Word hỏi, chọn **Update entire table**.
+3. **File → Export → Create PDF/XPS**, ghi đè `docs/BAO-CAO-DO-AN-LearnQuiz.pdf`.
+
+Cho tới khi làm bước này, `BAO-CAO-DO-AN-LearnQuiz.pdf` vẫn là bản **72 trang** — số liệu đã đúng hết (345, adminService 76, Bảng 1.6) nhưng **chưa có** mục hạn chế thứ tư và hàng mới của Bảng 6.1. Tệp `.docx` mới là bản đủ.
+
+*Đã dọn:* trả lại máy in mặc định `Brother DCP-J100 Printer`, đóng hết tiến trình Word chạy ngầm, gỡ Mark of the Web cho toàn bộ tệp Office và PDF trong `docs/` để Word không hiện thanh cảnh báo vàng khi cha mở.
