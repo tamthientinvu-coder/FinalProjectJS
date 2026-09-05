@@ -156,3 +156,57 @@ Kết luận: đây là giới hạn của Word khi bị điều khiển qua COM
 Cho tới khi làm bước này, `BAO-CAO-DO-AN-LearnQuiz.pdf` vẫn là bản **72 trang** — số liệu đã đúng hết (345, adminService 76, Bảng 1.6) nhưng **chưa có** mục hạn chế thứ tư và hàng mới của Bảng 6.1. Tệp `.docx` mới là bản đủ.
 
 *Đã dọn:* trả lại máy in mặc định `Brother DCP-J100 Printer`, đóng hết tiến trình Word chạy ngầm, gỡ Mark of the Web cho toàn bộ tệp Office và PDF trong `docs/` để Word không hiện thanh cảnh báo vàng khi cha mở.
+
+---
+
+## 2026-09-05 (tối) — Sửa lỗi "No table of contents entries found" ở hai danh mục
+
+### Triệu chứng
+
+Trong bản PDF cha xuất ra: **MỤC LỤC hiện đầy đủ** kèm số trang, nhưng **DANH MỤC HÌNH VẼ** và **DANH MỤC BẢNG BIỂU** chỉ có đúng một dòng `No table of contents entries found.` Bấm `Ctrl + A` → `F9` cũng không cứu được.
+
+### Nguyên nhân — hai lỗi chồng lên nhau
+
+Mã trường trong `word/document.xml` là:
+
+```
+TOC \h \t "CaptionFigure,1"
+TOC \h \t "CaptionTable,1"
+```
+
+**Lỗi 1 — sai tên style.** Công tắc `\t` của trường `TOC` khớp theo **tên hiển thị** của style, không phải `styleId`. Trong `word/styles.xml`:
+
+```xml
+<w:style w:type="paragraph" w:styleId="CaptionFigure">
+  <w:name w:val="Caption Figure" />   <!-- CO DAU CACH -->
+```
+
+Trường đi tìm style tên `CaptionFigure` (liền nhau) trong khi style thật tên `Caption Figure` (có dấu cách) → không khớp dòng nào.
+
+**Lỗi 2 — sai dấu phân cách danh sách.** Cú pháp `\t "Tên style,Cấp"` dùng **dấu phân cách danh sách của Windows**, không phải luôn luôn là dấu phẩy. Máy này:
+
+```
+(Get-Culture).TextInfo.ListSeparator  ->  ;
+HKCU:\Control Panel\International\sList  ->  ;
+```
+
+Nên `"CaptionFigure,1"` bị Word đọc thành **một** tên style là `CaptionFigure,1`. Đây cũng là lý do MỤC LỤC vẫn chạy tốt: nó dùng `\o "1-3"`, không có dấu phân cách nào.
+
+### Cách sửa
+
+Bỏ luôn số cấp — vừa đúng tên, vừa không phụ thuộc thiết lập vùng miền của máy:
+
+```
+TOC \h \t "Caption Figure"
+TOC \h \t "Caption Table"
+```
+
+Kiểm chứng bằng Word COM: `TablesOfContents.Item(2).Range.Text` từ **35 ký tự** (chỉ mỗi câu placeholder) lên **542 ký tự** (10 hình), `Item(3)` lên **2.088 ký tự** (43 bảng).
+
+Sau đó **nướng sẵn kết quả vào tệp**: mở bằng Word, `Update()` cả ba mục lục hai lượt cho số trang hội tụ, rồi `Save()`. Nhờ vậy tệp `.docx` giao đi đã có sẵn hai danh mục đầy đủ — cha **không cần bấm `F9`** nữa, và cũng không sợ lỡ tay chọn *"Update page numbers only"* (vốn là lựa chọn mặc định trong hộp thoại của Word, và với một bảng đang rỗng thì nó giữ nguyên sự rỗng — nhiều khả năng đây chính là điều đã xảy ra lần trước).
+
+Báo cáo tăng **73 → 74 trang** vì hai danh mục nay có nội dung thật.
+
+### Vẫn còn: PDF phải xuất tay
+
+`ExportAsFixedFormat` qua COM tiếp tục treo, kể cả trên tệp do chính Word ghi ra. Cha mở `docs/BAO-CAO-DO-AN-LearnQuiz.docx` rồi **File → Export → Create PDF/XPS**, ghi đè `docs/BAO-CAO-DO-AN-LearnQuiz.pdf`. Lần này **không cần bấm `F9` trước** vì cả ba mục lục đã có sẵn nội dung và số trang đúng.
