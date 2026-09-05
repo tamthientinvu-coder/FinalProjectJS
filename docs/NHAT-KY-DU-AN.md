@@ -205,8 +205,26 @@ Kiểm chứng bằng Word COM: `TablesOfContents.Item(2).Range.Text` từ **35 
 
 Sau đó **nướng sẵn kết quả vào tệp**: mở bằng Word, `Update()` cả ba mục lục hai lượt cho số trang hội tụ, rồi `Save()`. Nhờ vậy tệp `.docx` giao đi đã có sẵn hai danh mục đầy đủ — cha **không cần bấm `F9`** nữa, và cũng không sợ lỡ tay chọn *"Update page numbers only"* (vốn là lựa chọn mặc định trong hộp thoại của Word, và với một bảng đang rỗng thì nó giữ nguyên sự rỗng — nhiều khả năng đây chính là điều đã xảy ra lần trước).
 
-Báo cáo tăng **73 → 74 trang** vì hai danh mục nay có nội dung thật.
+Hai danh mục nay có nội dung thật, nhưng **số trang cuối cùng vẫn là 72** — bằng đúng bản gốc. Trước đây ba trang danh mục gần như trống (mỗi trang chỉ một dòng placeholder); nay chúng được lấp đầy, bù lại phần nội dung mới thêm ở §5.9 và Bảng 6.1.
+
+*Ghi để lần sau khỏi nhầm:* `Document.ComputeStatistics(2)` báo **74 trang**, nhưng bản PDF Word xuất ra chỉ có **72**. Hàm này phân trang theo thông số của **máy in mặc định** (ở đây là Brother DCP-J100 đang offline), còn `Export → Create PDF` phân trang theo bộ xuất PDF. Khi cần con số thật thì phải đọc từ tệp PDF đã xuất, không tin `ComputeStatistics`.
 
 ### Vẫn còn: PDF phải xuất tay
 
 `ExportAsFixedFormat` qua COM tiếp tục treo, kể cả trên tệp do chính Word ghi ra. Cha mở `docs/BAO-CAO-DO-AN-LearnQuiz.docx` rồi **File → Export → Create PDF/XPS**, ghi đè `docs/BAO-CAO-DO-AN-LearnQuiz.pdf`. Lần này **không cần bấm `F9` trước** vì cả ba mục lục đã có sẵn nội dung và số trang đúng.
+
+### Nghiệm thu bản PDF cuối (xuất tay bằng Word, commit `59b579c`)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `pdfinfo` | 72 trang · Producer *Microsoft Word for Microsoft 365* |
+| Chuỗi `No table of contents entries found` | **0** lần |
+| Danh mục hình vẽ | **10** mục, đủ số trang (Hình 3.1 → 5.2) |
+| Danh mục bảng biểu | **43** mục, đủ số trang (Bảng 1.1 → D.1) |
+| Chuỗi `344` / `4.017` / `6.067` / `1.609` / `143 tệp` | **0** lần |
+| Bảng 1.6 | 161 tệp · 4.295/58 · 6.174/52 · 1.993/18 |
+| §5.9 | "Bốn hạn chế cần nêu trung thực" + mục về bốn cột khóa ngoại |
+| Bảng 6.1 | có hàng "Đánh chỉ mục khóa ngoại" kèm ghi chú `EXPLAIN ANALYZE` |
+| CI trên `59b579c` | xanh |
+
+Bộ hồ sơ nay nhất quán ở cả năm nơi: mã nguồn · `.md` · DOCX · PPTX · PDF.
