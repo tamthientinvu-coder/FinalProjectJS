@@ -46,9 +46,22 @@ export default function CourseListPage() {
   // nên chỉ đẩy lên URL khi bấm nút hoặc nhấn Enter.
   const [searchInput, setSearchInput] = useState(search);
 
+  // KHONG dong bo o tim kiem theo moi thay doi cua `search`. Truoc day co
+  //     useEffect(() => setSearchInput(search), [search])
+  // va no chinh la nguon loi: sau khi bam Enter, buoc dieu huong commit khien
+  // `search` doi gia tri, effect chay va GHI DE len chu ma nguoi dung da go
+  // tiep trong luc cho. Nguoi go nhanh se thay o tim kiem tu nhien bi tra ve
+  // tu khoa cu; lan Enter ke tiep vi vay gui di dung tu khoa cu, URL khong doi
+  // va danh sach khong doi.
+  //
+  // O tim kiem chi can dong bo lai voi URL khi dieu huong KHONG do nguoi dung
+  // go, tuc la khi bam Back/Forward. Gia tri ban dau da lay tu URL o useState.
   useEffect(() => {
-    setSearchInput(search);
-  }, [search]);
+    const dongBoTheoUrl = () =>
+      setSearchInput(new URLSearchParams(window.location.search).get("search") ?? "");
+    window.addEventListener("popstate", dongBoTheoUrl);
+    return () => window.removeEventListener("popstate", dongBoTheoUrl);
+  }, []);
 
   useEffect(() => {
     categoryApi
@@ -84,13 +97,17 @@ export default function CourseListPage() {
 
   /** Đổi bất kỳ bộ lọc nào cũng phải quay về trang 1, nếu không sẽ ra danh sách rỗng. */
   const updateFilter = (patch: Record<string, string>) => {
-    const next = new URLSearchParams(searchParams);
-    Object.entries(patch).forEach(([key, value]) => {
-      if (value) next.set(key, value);
-      else next.delete(key);
+    // Dang ham: luon tinh tren tham so moi nhat router dang giu, thay vi ban
+    // `searchParams` cua render hien tai (co the da cu).
+    setSearchParams((truoc) => {
+      const next = new URLSearchParams(truoc);
+      Object.entries(patch).forEach(([key, value]) => {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      });
+      if (!("page" in patch)) next.delete("page");
+      return next;
     });
-    if (!("page" in patch)) next.delete("page");
-    setSearchParams(next);
   };
 
   const resetFilter = () => {
@@ -127,7 +144,11 @@ export default function CourseListPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") updateFilter({ search: searchInput.trim() });
+              // Doc thang tu o input chu khong tu `searchInput` cua closure:
+              // React co the chua kip render lai sau onChange.
+              if (e.key === "Enter") {
+                updateFilter({ search: (e.target as HTMLInputElement).value.trim() });
+              }
             }}
             slotProps={{
               input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1 }} /> },

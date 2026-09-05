@@ -17,10 +17,10 @@ không sửa lùi, để giữ được dấu vết kiểm chứng.
 | Phép khẳng định back-end | `cd backend && npm test`, đếm dấu `✓` | **345 đạt / 0 hỏng** |
 | Phân rã theo tệp | chạy từng `tests/*.test.ts` | env 1 · grader 24 · workflow 30 · schema 31 · gemini 18 · quizService 49 · **adminService 76** · aiService 36 · enrollmentService 4 · graduationRegression 16 · api 60 |
 | Unit test front-end | 4 tệp `*.test.ts` trong `frontend/src` | 13 ca |
-| E2E | `frontend/e2e/role-routing.spec.ts` | 3 ca (Playwright) |
+| E2E | `frontend/e2e/role-routing.spec.ts` | 3 ca (Playwright) — *đã tăng lên 6 ca ngày 05/09, xem mục nhật ký cuối* |
 | Mã nguồn back-end | `backend/src/**/*.ts` | 58 tệp / 4.295 dòng |
 | Mã nguồn front-end | `frontend/src/**/*.{ts,tsx}`, trừ tệp test | 52 tệp / 6.174 dòng |
-| Mã nguồn kiểm thử | `backend/tests` (13) + 4 tệp vitest + 1 tệp e2e | 18 tệp / 1.993 dòng |
+| Mã nguồn kiểm thử | `backend/tests` (13) + 4 tệp vitest + 1 tệp e2e | 18 tệp / 1.993 dòng — *nay là 2.078 dòng* |
 | Tổng tệp mã nguồn & cấu hình | `git ls-files`, trừ `docs/`, `*.md`, `package-lock.json`, `.docx` | 161 tệp |
 | Lược đồ CSDL | `backend/prisma/schema.prisma` | 11 bảng · 3 enum · 9 ràng buộc `unique` · 217 dòng |
 | Điểm cuối API | đếm `router.<method>(` trong `backend/src/routes` | 46 (18 GET · 13 POST · 10 PATCH · 4 DELETE · 1 PUT) |
@@ -228,3 +228,79 @@ Hai danh mục nay có nội dung thật, nhưng **số trang cuối cùng vẫn
 | CI trên `59b579c` | xanh |
 
 Bộ hồ sơ nay nhất quán ở cả năm nơi: mã nguồn · `.md` · DOCX · PPTX · PDF.
+
+---
+
+## 2026-09-05 (khuya) — Truy nguyên lỗi E2E "Back khôi phục từ khóa"
+
+### Bối cảnh — kèm một lỗi quy trình của Cowork
+
+Commit `57659c6` mang thông điệp *"sửa lỗi rtk trong markdown"* nhưng thực tế **gom luôn 7 tệp**: hai tài liệu mới, ba ca E2E mới, `axiosClient.ts`, `CourseListPage.tsx`, `LearnPage.tsx`. Nguyên nhân: Cowork chạy `git add -A` mà không soát `git status` trước, nên quét cả phần đang làm dở trong worktree. Thông điệp commit vì thế mô tả sai nội dung. **Bài học:** luôn `git status` trước khi `git add -A`, hoặc chỉ `git add` đúng tệp đã sửa.
+
+Hệ quả: E2E tăng từ 3 lên **6 ca**, và ca thứ 5 hỏng làm **CI đỏ trên `main`**.
+
+### Triệu chứng
+
+`Back khôi phục từ khóa trong ô tìm kiếm`: gõ "JavaScript" → Enter → gõ "React" → Enter → Back. Ô tìm kiếm phải trở lại "JavaScript" nhưng vẫn hiện "React". Hỏng 6/6 lần, cả headless lẫn headed.
+
+### Các giả thuyết đã loại trừ
+
+| Giả thuyết | Cách bác bỏ |
+|---|---|
+| Ca test chập chờn (flaky) | Hỏng 6/6 lần liên tiếp, cả khi chạy riêng |
+| Headless không sinh khung hình | Chạy `--headed` cũng hỏng 3/3 |
+| `goBack()` tải lại tài liệu | Ghi `docId` ngẫu nhiên mỗi tài liệu — trước và sau Back giống nhau |
+| Chromium khôi phục form theo lịch sử | React props cũng ghi `value="React"`, không chỉ DOM |
+| Router không nghe `popstate` | `popstate` có bắn, `location.search` đúng `?search=JavaScript` |
+
+### Nguyên nhân thật
+
+Đếm request thật mà trang gửi đi cho thấy **không hề có request nào cho `search=React`**. Gắn log vào chính handler thì bắt được:
+
+```
+[dbg] ENTER v= JavaScript | searchParams= search=JavaScript | location= ?search=JavaScript
+[dbg] UPDATER truoc= search=JavaScript -> next= search=JavaScript
+```
+
+Phím Enter **thứ hai** nhận `v = "JavaScript"` chứ không phải "React" — chữ vừa gõ đã bị xoá trước khi Enter kịp đọc.
+
+Thủ phạm là chính effect đồng bộ:
+
+```tsx
+useEffect(() => { setSearchInput(search); }, [search]);
+```
+
+Chuỗi sự kiện: bấm Enter lần 1 → điều hướng commit → `search` đổi từ `""` sang `"JavaScript"` → effect chạy → **ghi đè lên chữ người dùng đã gõ tiếp trong lúc chờ**. Lần Enter kế tiếp vì thế gửi đi đúng tu khóa cũ, router thấy không có gì thay đổi nên bỏ qua: URL không đổi, danh sách không đổi, chỉ mỗi ô input là đổi — ba thứ nói ba đằng.
+
+**Đây là lỗi người dùng chạm được thật, không phải lỗi test:** ai gõ nhanh, tìm một từ rồi gõ tiếp từ thứ hai trước khi kết quả kịp về, sẽ thấy ô tìm kiếm tự nhảy về từ khóa cũ.
+
+### Bản vá
+
+`frontend/src/pages/CourseListPage.tsx` — ba thay đổi:
+
+1. **Bỏ hẳn** `useEffect(..., [search])`. Ô tìm kiếm chỉ cần lấy giá trị ban đầu từ URL (`useState(search)`), không có lý do gì để ghi đè lên chữ người dùng đang gõ.
+2. **Thêm listener `popstate`** đọc thẳng `window.location.search` — đúng và chỉ đúng khi điều hướng *không* do người dùng gõ (Back/Forward), là trường hợp duy nhất cần đồng bộ lại.
+3. **Phòng thủ thêm:** `setSearchParams` dùng dạng hàm (tránh `searchParams` cũ trong closure), và handler Enter đọc thẳng `e.target.value` thay vì `searchInput` của closure.
+
+`frontend/playwright.config.ts` — `retries: process.env.CI ? 2 : 0` làm lưới an toàn cho kiểm thử trình duyệt.
+
+### Kết quả đo
+
+| | Ca "Back" riêng | Toàn bộ 6 ca |
+|---|---|---|
+| Trước vá | 0/6 đạt | 0/3 |
+| Sau vá | 6/6 | **5/5** |
+
+Ca test **giữ nguyên như cha viết** — không phải nới lỏng khẳng định để cho qua.
+
+### Số liệu đã lệch lại — chờ quyết định
+
+Phần mã cha thêm làm Bảng 1.6 của báo cáo sai lần nữa:
+
+| Hạng mục | Báo cáo đang ghi | Thực tế |
+|---|---|---|
+| Tổng tệp mã nguồn và cấu hình | 161 | **162** |
+| Mã nguồn front-end | 6.174 dòng / 52 tệp | **6.215 dòng** / 52 tệp |
+| Mã nguồn kiểm thử | 1.993 dòng / 18 tệp | **2.078 dòng** / 18 tệp |
+
+Back-end (4.295/58), CSDL (11 bảng · 3 enum · 217 dòng), điểm cuối (46) và màn hình (21) vẫn đúng. Ba dòng lệch đều là chênh nhỏ; vá lại DOCX/PPTX/PDF mất khoảng 30 phút và phải xuất PDF tay lần nữa — để cha quyết có làm trước bảo vệ hay không.
