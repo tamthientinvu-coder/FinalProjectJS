@@ -304,3 +304,34 @@ Phần mã cha thêm làm Bảng 1.6 của báo cáo sai lần nữa:
 | Mã nguồn kiểm thử | 1.993 dòng / 18 tệp | **2.078 dòng** / 18 tệp |
 
 Back-end (4.295/58), CSDL (11 bảng · 3 enum · 217 dòng), điểm cuối (46) và màn hình (21) vẫn đúng. Ba dòng lệch đều là chênh nhỏ; vá lại DOCX/PPTX/PDF mất khoảng 30 phút và phải xuất PDF tay lần nữa — để cha quyết có làm trước bảo vệ hay không.
+
+---
+
+## 2026-09-05 (chốt) — Rà soát phần mã chưa qua review và hợp nhất tài liệu
+
+### 1. Đã review phần mã bị commit `57659c6` gom nhầm
+
+Ba tệp mã nguồn vào `main` dưới một thông điệp commit nói về tài liệu, nên chưa ai soát. Đã đọc lại toàn bộ:
+
+| Tệp | Thay đổi | Đánh giá |
+|---|---|---|
+| `api/axiosClient.ts` | Không refresh token khi `401` đến từ `/auth/login` hoặc `/auth/register`; thêm `timeout: 15000` cho lời gọi refresh | **Đúng và cần thiết.** Sai mật khẩu trước đây kích hoạt vòng refresh vô ích rồi tải lại trang, làm mất thông báo lỗi tại form. Timeout chặn được tình huống refresh treo vô hạn khi mạng chập chờn. |
+| `pages/LearnPage.tsx` | Thêm `lessonVersion` (useRef) làm dấu phiên; mọi lời gọi bất đồng bộ đối chiếu phiên trước khi ghi state; hai effect nạp dữ liệu có cờ `ignore` và hàm dọn dẹp | **Đúng bài bản.** Đây là mẫu chuẩn chống "phản hồi đến muộn ghi đè kết quả mới" — chuyển bài nhanh sẽ không còn cảnh nội dung bài A đè lên bài B. Khớp với ca E2E mới cùng tên. |
+| `pages/CourseListPage.tsx` | Thêm `useEffect(..., [search])` đồng bộ ô tìm kiếm | **Sai** — chính là lỗi đã truy nguyên và vá ở commit `d8bf9f0`. |
+
+Không tìm thấy khiếm khuyết nào khác trong hai tệp đầu.
+
+### 2. Hai hướng dẫn kiểm tra tay trùng tên — đã hợp nhất
+
+Commit trên cũng thêm `docs/HUONG-DAN-KIEM-TRA-TAY.md`, tự ghi ở dòng đầu là *"hướng dẫn hiện hành; thay thế bản ngày 02/09"* — nhưng `README.md` vẫn trỏ vào bản **02/09**. Ai đọc README sẽ mở đúng bản đã bị thay thế.
+
+Đã xử lý:
+
+- `README.md` trỏ sang `HUONG-DAN-KIEM-TRA-TAY.md`, đồng thời thêm liên kết `MAU-KET-QUA-KIEM-TRA.md` (phiếu ghi kết quả).
+- Bản `HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md` được gắn khung cảnh báo ở đầu tệp: đã bị thay thế, giữ lại làm biên bản đợt 02–04/09, số liệu bên trong cố ý không sửa lùi.
+
+Đáng ghi nhận: bản hướng dẫn mới **không chép cứng số ca kiểm thử** mà yêu cầu *"ghi số test từ output thật; không suy ra từ số ghi trong README"*. Đây là cách làm đúng — chính việc chép cứng số liệu là nguồn của phần lớn các lần lệch trong nhật ký này.
+
+### 3. Công cụ hỗ trợ
+
+`kiem-tra-learnquiz.ps1` (đặt ở Desktop, **cố ý để ngoài repo** để không làm đổi số tệp của dự án) chạy toàn bộ cổng tự động và in bảng ĐẠT/HỎNG: git sạch và đồng bộ · back-end lint/typecheck/test/build/prisma/audit · front-end lint/typecheck/vitest/playwright/build/audit · smoke production. Lưu ý kỹ thuật: phải ép `chcp 65001` và `[Console]::OutputEncoding = UTF8` trước khi gọi `npm`, nếu không dấu `✓` trong output bị vỡ và đếm ra 0.
