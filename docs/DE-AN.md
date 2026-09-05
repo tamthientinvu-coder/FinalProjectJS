@@ -246,6 +246,39 @@ Nếu về sau giảng viên sửa đáp án đúng của câu hỏi, bài đã 
 
 ---
 
+### 4.3. Chiến lược đánh chỉ mục — và bảy khóa ngoại chưa được phủ
+
+**PostgreSQL không tự tạo chỉ mục cho cột khóa ngoại phía con.** Đây là điểm khác MySQL/InnoDB (nơi engine bắt buộc phải có chỉ mục nên tự tạo). Prisma cũng chỉ tự thêm `@@index` cho MySQL; với PostgreSQL nó chỉ sinh ràng buộc trần:
+
+```sql
+ALTER TABLE "courses" ADD CONSTRAINT "courses_instructor_id_fkey"
+  FOREIGN KEY ("instructor_id") REFERENCES "users"("id") ON DELETE CASCADE;
+```
+
+Một ràng buộc `@@unique` tổ hợp **có** phủ cột dẫn đầu của nó (btree dùng được cho tiền tố trái), nhưng **không** phủ cột thứ hai trở đi. Rà soát cả 15 cột khóa ngoại của lược đồ:
+
+| Đã được phủ (8) | Nhờ đâu |
+|---|---|
+| `courses.category_id` | `@@index([categoryId])` |
+| `lessons.course_id` · `questions.quiz_id` · `enrollments.student_id` · `lesson_progress.enrollment_id` · `quiz_submissions.student_id` · `answers.submission_id` | cột dẫn đầu của `@@unique` tương ứng |
+| `quizzes.lesson_id` | `@unique` một cột |
+
+| Chưa được phủ (7) | Đường truy vấn thật |
+|---|---|
+| `enrollments.course_id` | `_count.enrollments` trên **mọi** trang danh sách khóa học; thống kê lớp; bảng xếp hạng khóa học của quản trị |
+| `quiz_submissions.quiz_id` | **bốn** truy vấn `groupBy` liên tiếp ở trang thống kê lớp |
+| `choices.question_id` | mọi lần tải đề, nộp bài, xem lại đáp án — `choices` không có chỉ mục nào ngoài khóa chính |
+| `courses.instructor_id` | danh sách khóa học của chính giảng viên; đếm `coursesTaught` ở trang quản lý người dùng |
+| `lesson_progress.lesson_id` · `answers.question_id` · `answers.choice_id` | gần như chỉ nằm trên đường `ON DELETE CASCADE` khi xóa khóa học |
+
+**Vì sao chưa thêm.** PostgreSQL đọc theo trang 8 KB; một bảng chưa vượt một hai trang (cỡ 100–200 dòng hẹp) thì **luôn** quét tuần tự, có chỉ mục cũng không dùng tới. Ở quy mô trình diễn hiện tại, lợi ích đo được đúng bằng không, trong khi mỗi chỉ mục tốn thêm khoảng 20–25 byte mỗi dòng và làm chậm thao tác ghi. Thêm chỉ mục mà không có số đo `EXPLAIN ANALYZE` chứng minh thì là tối ưu theo cảm tính.
+
+**Một nghịch lý đáng nêu.** Lược đồ hiện có `@@index([status])` nhưng không có `instructorId`, trong khi xét độ chọn lọc thì ngược lại: `status` chỉ có 4 giá trị nên một truy vấn trả về 25–100% số dòng (chỉ mục gần như vô dụng), còn `instructorId` phân tán theo số giảng viên nên càng nhiều dữ liệu càng chọn lọc tốt. Chỉ mục theo `status` được giữ lại vì nó phục vụ đúng một truy vấn nóng — danh sách khóa học công khai luôn cố định `status = published` — nhưng đây là chỗ cần nói rõ chứ không nên im lặng.
+
+Hướng xử lý (khi dữ liệu vượt quy mô trình diễn) được ghi ở mục 6.3 của báo cáo.
+
+---
+
 ## 5. Hợp đồng API `v1`
 
 Mọi response tuân theo **một** khuôn dạng duy nhất:
