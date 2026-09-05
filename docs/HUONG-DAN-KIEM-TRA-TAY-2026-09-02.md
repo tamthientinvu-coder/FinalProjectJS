@@ -19,7 +19,7 @@
 | Production API | `/health` trả `status=ok`, `db=up` |
 | Production frontend | HTTP 200 từ Vercel |
 
-Số lượng test trong `README.md` và `docs/DE-AN.md` đã được đồng bộ về backend 344/344 và frontend 13/13. HTTP 200 production chỉ là smoke hạ tầng, chưa thay thế kiểm thử đăng nhập, CORS, dữ liệu và giao diện bằng trình duyệt.
+Số lượng test trong `README.md` và `docs/DE-AN.md` đã được đồng bộ về backend 345/345 và frontend 13/13 (cập nhật 05/09/2026, sau khi thêm 1 test chống làm tròn trung gian cho điểm lớp). HTTP 200 production chỉ là smoke hạ tầng, chưa thay thế kiểm thử đăng nhập, CORS, dữ liệu và giao diện bằng trình duyệt.
 
 ---
 

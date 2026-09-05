@@ -11,11 +11,11 @@ Bộ hồ sơ nằm trong `FinalProject/docs/`:
 
 ---
 
-## 1. Chỉ còn một chỗ phải điền
+## 1. Các trường thông tin cá nhân
 
 Họ tên học viên (**VŨ TÂM THIỆN TÍN**) và giảng viên hướng dẫn (**NGUYỄN LÊ HOÀNG THÔNG**) đã được điền sẵn ở bìa chính, bìa phụ, trang Lời cảm ơn và slide bảo vệ.
 
-Còn lại duy nhất **mã học viên** — điền vào bìa chính (trang 1) và bìa phụ (trang 2).
+**Mã học viên**: để trống ở bìa chính (trang 1) và bìa phụ (trang 2) — đây là lựa chọn đã chốt, không phải thiếu sót cần điền thêm.
 
 Trang **Nhận xét của giảng viên hướng dẫn** để trống cho thầy ghi và ký.
 
