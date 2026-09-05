@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Paper,
@@ -35,6 +35,7 @@ export default function LearnPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeLessonId = searchParams.get("lesson");
 
+  const lessonVersion = useRef(0);
   const [view, setView] = useState<LearnView | null>(null);
   const [lesson, setLesson] = useState<LessonContent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,30 +50,33 @@ export default function LearnPage() {
   const [summarizing, setSummarizing] = useState(false);
   const [summaryError, setSummaryError] = useState("");
 
-  const loadView = useCallback(async () => {
-    if (!courseId) return null;
-    const res = await lessonApi.getLearnView(Number(courseId));
-    setView(res.data.data);
-    return res.data.data;
-  }, [courseId]);
-
   // 1) Nạp khung màn hình học, tự chọn bài đầu tiên chưa hoàn thành
   useEffect(() => {
+    let ignore = false;
     setLoading(true);
     setError("");
-    loadView()
-      .then((data) => {
-        if (!data || activeLessonId) return;
+    lessonApi.getLearnView(Number(courseId))
+      .then((res) => {
+        if (ignore) return;
+        const data = res.data.data;
+        setView(data);
+        if (activeLessonId) return;
         const next = data.lessons.find((l) => l.isUnlocked && !l.isCompleted) ?? data.lessons[0];
         if (next) setSearchParams({ lesson: String(next.id) }, { replace: true });
       })
-      .catch((err) => setError(handleApiError(err)))
-      .finally(() => setLoading(false));
+      .catch((err) => { if (!ignore) setError(handleApiError(err)); })
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   // 2) Nạp nội dung bài đang chọn
   useEffect(() => {
+    const version = ++lessonVersion.current;
+    let ignore = false;
+    setLesson(null);
+    setSummarizing(false);
+    setMarking(false);
     if (!activeLessonId) return;
     setLessonLoading(true);
     setLessonError("");
@@ -81,26 +85,33 @@ export default function LearnPage() {
     setSummaryError("");
     lessonApi
       .getContent(Number(activeLessonId))
-      .then((res) => setLesson(res.data.data))
+      .then((res) => { if (!ignore) setLesson(res.data.data); })
       .catch((err) => {
+        if (ignore) return;
         setLesson(null);
         setLessonError(handleApiError(err));
       })
-      .finally(() => setLessonLoading(false));
-  }, [activeLessonId]);
+      .finally(() => { if (!ignore) setLessonLoading(false); });
+    return () => {
+      ignore = true;
+      if (lessonVersion.current === version) lessonVersion.current += 1;
+    };
+  }, [activeLessonId, courseId]);
 
   const handleToggleComplete = async () => {
     if (!lesson) return;
+    const version = lessonVersion.current;
     setMarking(true);
     try {
       // Backend trả về tiến độ mới -> cập nhật thanh bên và % ngay, khỏi gọi lại
       const res = await lessonApi.markComplete(lesson.id, !lesson.isCompleted);
+      if (version !== lessonVersion.current) return;
       setView(res.data.data);
       setLesson({ ...lesson, isCompleted: !lesson.isCompleted });
     } catch (err) {
-      setLessonError(handleApiError(err));
+      if (version === lessonVersion.current) setLessonError(handleApiError(err));
     } finally {
-      setMarking(false);
+      if (version === lessonVersion.current) setMarking(false);
     }
   };
 
@@ -108,15 +119,16 @@ export default function LearnPage() {
 
   const handleSummarize = async () => {
     if (!lesson) return;
+    const version = lessonVersion.current;
     setSummarizing(true);
     setSummaryError("");
     try {
       const res = await aiApi.summarizeLesson(lesson.id);
-      setSummary(res.data.data.bullets);
+      if (version === lessonVersion.current) setSummary(res.data.data.bullets);
     } catch (err) {
-      setSummaryError(handleApiError(err));
+      if (version === lessonVersion.current) setSummaryError(handleApiError(err));
     } finally {
-      setSummarizing(false);
+      if (version === lessonVersion.current) setSummarizing(false);
     }
   };
 

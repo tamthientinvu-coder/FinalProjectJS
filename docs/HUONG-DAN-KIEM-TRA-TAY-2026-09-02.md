@@ -506,20 +506,20 @@ Trên local, nhập tiếng Việt, dấu nháy, `<script>alert(1)</script>` và
 
 ```powershell
 cd C:\Users\vutam\Desktop\FinalProject\backend
-rtk npm run lint
-rtk npm run typecheck
-rtk npm test
-rtk npm run build
-rtk npx prisma validate
-rtk npm audit --audit-level=high
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npx prisma validate
+npm audit --audit-level=high
 
 cd C:\Users\vutam\Desktop\FinalProject\frontend
-rtk npm run lint
-rtk npm run typecheck
-rtk npm test
-rtk npm run test:e2e
-rtk npm run build
-rtk npm audit --audit-level=high
+npm run lint
+npm run typecheck
+npm test
+npm run test:e2e
+npm run build
+npm audit --audit-level=high
 ```
 
 **Tiêu chí:** không lint/type/build error; backend đạt toàn suite; frontend 13/13; Playwright 3/3; Prisma hợp lệ; không critical/high vulnerability. Mọi moderate phải có quyết định vá hoặc chấp nhận rủi ro có lý do. Nếu chạy `npm audit fix`, phải kiểm diff/lockfile rồi chạy lại toàn bộ cổng.
