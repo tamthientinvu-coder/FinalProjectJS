@@ -572,3 +572,35 @@ Kiểm chứng sau khi dọn:
 | Đồng bộ với GitHub | ahead/behind **0/0** tại `04ae53f` |
 
 `git gc --prune=now` đóng gói lại 557 đối tượng. Đến đây lịch sử cũ đã bị xoá dứt điểm ở **cả hai nơi** — trên máy và trên GitHub. Không còn đường nào khôi phục nó, và đó chính là điều mong muốn.
+
+### Sửa dứt điểm lỗi xác thực khi đẩy — 06/09/2026
+
+Không cần tạo token mới. Nguyên nhân nằm ở **thứ tự helper**, không phải ở việc thiếu thông tin đăng nhập.
+
+`git config --show-origin --get-regexp "^credential"` cho thấy hai tầng cấu hình chồng nhau:
+
+| Tệp cấu hình | Nội dung |
+|---|---|
+| `C:/Program Files/Git/etc/gitconfig` (mức hệ thống) | `credential.helper manager` |
+| `C:/Users/vutam/.gitconfig` (mức người dùng) | `credential.https://github.com.helper` → **rỗng** rồi `!gh auth git-credential` |
+
+Dòng rỗng ở mức người dùng **xoá sạch** danh sách helper thừa hưởng từ mức hệ thống, rồi thay bằng GitHub CLI. Do đó Git không bao giờ chạm tới Credential Manager — dù nó đang giữ một mục hợp lệ cho `tamthientinvu-coder`. Hai dòng đó do `gh auth setup-git` đặt vào.
+
+Cách chữa — gỡ đúng hai dòng ấy, để cấu hình mức hệ thống trở lại có hiệu lực:
+
+```
+git config --global --unset-all "credential.https://github.com.helper"
+git config --global --unset-all "credential.https://gist.github.com.helper"
+```
+
+Kiểm chứng:
+
+| Phép đo | Kết quả |
+|---|---|
+| Cấu hình `credential` còn lại | chỉ `credential.helper manager` ở mức hệ thống |
+| `git push --dry-run origin main` | `Everything up-to-date` — xác thực thành công, không hỏi mật khẩu |
+| `git credential fill` | `username=tamthientinvu-coder` |
+
+Từ đây `git push` chạy thẳng, không cần thủ thuật `-c credential...helper=manager` nữa.
+
+> Muốn dùng lại GitHub CLI thì chạy `gh auth login -h github.com` rồi `gh auth setup-git` — hai dòng trên sẽ được đặt lại. Chỉ nên làm sau khi token của `gh` đã hợp lệ, nếu không sẽ hỏng đúng như cũ.
