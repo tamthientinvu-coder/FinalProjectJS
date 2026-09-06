@@ -604,3 +604,55 @@ Kiểm chứng:
 Từ đây `git push` chạy thẳng, không cần thủ thuật `-c credential...helper=manager` nữa.
 
 > Muốn dùng lại GitHub CLI thì chạy `gh auth login -h github.com` rồi `gh auth setup-git` — hai dòng trên sẽ được đặt lại. Chỉ nên làm sau khi token của `gh` đã hợp lệ, nếu không sẽ hỏng đúng như cũ.
+
+---
+
+## 06/09/2026 — Tài liệu ôn bảo vệ và một vòng đo lại toàn hệ thống
+
+### Đo lại tất cả cổng chất lượng
+
+Chạy đầy đủ trên máy, không lấy lại số cũ:
+
+| Cổng | Kết quả |
+|---|---|
+| Backend `tsc --noEmit` | **0** lỗi |
+| Backend `eslint --max-warnings=0` | **0** |
+| Backend `vitest` | **345** phép khẳng định, exit 0 |
+| Frontend `tsc --noEmit` | **0** lỗi |
+| Frontend `eslint --max-warnings=0` | **0** |
+| Frontend `vitest` | **4 tệp / 13 test**, exit 0 |
+| Frontend `vite build` | thành công, ~439 ms, gói lớn nhất 323,96 kB (gzip 102,85 kB) |
+| `npm audit` backend | `{"critical":0,"high":0,"moderate":0,"low":0,"info":0,"total":0}` |
+| `npm audit` frontend | `{"critical":0,"high":0,"moderate":0,"low":0,"info":0,"total":0}` |
+
+**Một cập nhật đáng kể:** ba cảnh báo `moderate` theo chuỗi `express → body-parser → qs` — ghi ở phần trên của nhật ký này là "chấp nhận rủi ro có lý do" — **nay đã hết**. Bản `express@4.22.2` đang dùng đã vá. Con số đúng để nói trước hội đồng là **0 lỗ hổng ở cả hai phía**, không còn phải giải trình cảnh báo nào.
+
+### Tài liệu mới: `docs/CAU-HOI-BAO-VE.md`
+
+Năm phần: tám khối kiến thức cốt lõi · 19 câu hỏi hội đồng kèm câu trả lời · bảy điểm yếu nên tự nhận · bảng số liệu phải thuộc · danh sách việc ngày bảo vệ.
+
+Nguyên tắc soạn: **mọi con số đều đo lại từ mã nguồn**, không chép từ báo cáo. Đối chiếu lại từng con số sau khi viết xong đã bắt được hai chỗ sai của chính bản nháp:
+
+| Chỗ sai | Sửa |
+|---|---|
+| Ghi "10 bảng" trong khi lược đồ có **11** `model` | Sửa thành 11, đếm lại bằng `grep -c "^model "` |
+| Ghi CORS "chỉ cho `FE_URL`" | Thực tế danh sách trắng gồm `FE_URL` **và hai địa chỉ `localhost`** |
+
+### Một phát hiện bảo mật nhỏ, đã ghi nhận, chưa sửa
+
+`backend/src/app.ts` dựng danh sách trắng CORS gồm `http://localhost:5173`, `http://localhost:3000` và `env.feUrl`. Hai địa chỉ `localhost` **vẫn còn hiệu lực ở môi trường thật**. Rủi ro thực tế thấp — kẻ tấn công phải điều khiển được một trang đang chạy trên chính máy nạn nhân — nhưng đúng ra nên lọc theo `NODE_ENV`.
+
+**Quyết định: chưa sửa trước bảo vệ.** Mọi thay đổi trong `backend/src` đều làm lệch số dòng đã chốt ở Bảng 1.6 của báo cáo (4.295 dòng backend), kéo theo phải vá lại `.docx`, slide và hai bản `.pdf`. Đổi một con số đã in để lấy một cải thiện lý thuyết ở sát ngày bảo vệ là không đáng. Đã đưa vào bảng "điểm yếu tự nhận" của tài liệu ôn, để nếu hội đồng có hỏi thì trả lời được ngay và trung thực.
+
+### Hai chỉnh sửa an toàn về số liệu
+
+Cả hai đều **không** đụng phép đếm 162 tệp và không đụng số dòng của Bảng 1.6:
+
+| Việc | Vì sao an toàn |
+|---|---|
+| Thêm link tài liệu ôn vào dòng mục lục của `README.md` | `*.md` bị loại khỏi phép đếm |
+| Thêm `NVIDIA Corporation/` vào `.gitignore` | Thư mục rỗng do driver sinh ra ở gốc dự án; `.gitignore` đã được đếm sẵn, thêm dòng không thêm tệp |
+
+### Đóng băng mã nguồn từ đây
+
+`npm outdated` cho thấy nhiều gói cách bản mới nhất vài phiên bản chính — `express` 4→5, `prisma` 5→7, `typescript` 5→7, `bcryptjs` 2→3. Đây đều là thay đổi phá vỡ. **Không nâng trước ngày bảo vệ.** Đóng băng là quyết định có chủ đích, và đã ghi vào tài liệu ôn để trả lời nếu bị hỏi, chứ không phải sự bỏ sót.

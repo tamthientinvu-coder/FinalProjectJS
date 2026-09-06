@@ -22,3 +22,5 @@ backend/prisma/*.db
 frontend/tsconfig.tsbuildinfo
 frontend/playwright-report/
 frontend/test-results/
+# Thư mục rỗng do driver NVIDIA sinh ra ở gốc dự án
+NVIDIA Corporation/
