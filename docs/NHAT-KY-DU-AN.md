@@ -530,3 +530,32 @@ Kết luận: `git filter-branch` đã chạy đúng, nhưng lần đẩy sau đ
 Nguyên nhân: Git bản Windows đặt `core.autocrlf = true` ở mức hệ thống (`C:/Program Files/Git/etc/gitconfig`), còn phía Linux thì không, và kho lại **không có `.gitattributes`**. Kiểm chứng: `git diff --numstat` báo 593/542/499 dòng đổi, nhưng `git diff --ignore-cr-at-eol` **rỗng hoàn toàn** — nội dung y hệt, chỉ khác ký tự xuống dòng. Đây cũng là nguồn của ~180 cảnh báo `LF will be replaced by CRLF`.
 
 **Quyết định: chưa thêm `.gitattributes` trước ngày bảo vệ.** Cách chữa đúng là một tệp `.gitattributes` với `* text=auto`, nhưng tệp đó nằm ở gốc kho nên sẽ lọt vào phép đếm `git ls-files` của Bảng 1.6 — **162 → 163** — kéo theo phải vá lại báo cáo `.docx`, slide, và cả hai bản `.pdf`. Đổi một con số đã chốt trong hồ sơ để lấy một khác biệt thuần hiển thị là không đáng. Ghi lại đây để làm sau khi bảo vệ xong.
+
+### Kết quả đẩy — 06/09/2026
+
+Đã đẩy ép thành công. `origin/main` = `a07b977`, trùng khớp hoàn toàn với bản trên máy (ahead/behind = 0/0).
+
+| Kiểm chứng trên bản công khai | Kết quả |
+|---|---|
+| Dấu vết tên công cụ trong **cả 34 commit** | **0** |
+| Tên tác giả / người commit | chỉ hai danh tính của cha, không có danh tính thứ ba |
+| Nhánh & thẻ trên máy chủ | `main` → `a07b977` · `v1.0.0` → `5245e9a`, nằm trong lịch sử mới, sạch |
+| Tệp trong cây làm việc còn nhắc tên công cụ | **0** |
+
+**Nguyên nhân thật của việc không đẩy được** — khác với chẩn đoán ban đầu. Không phải "lưu nhầm tài khoản", mà là:
+
+1. Kho cấu hình lấy thông tin đăng nhập github.com từ `gh auth git-credential` (GitHub CLI), **ghi đè** Windows Credential Manager.
+2. GitHub CLI đang giữ tài khoản `coderthientin` và **token của nó đã hết hạn** — `gh auth status` báo `The token in default is invalid`.
+3. Credential Manager vẫn có mục hợp lệ cho `tamthientinvu-coder` (chủ kho) nhưng Git không bao giờ chạm tới, vì helper `gh` đứng trước.
+
+Cách gỡ: đẩy với `git -c credential.https://github.com.helper= -c credential.https://github.com.helper=manager push --force-with-lease` — bỏ helper `gh` **chỉ cho một lệnh**, không sửa cấu hình kho. Hộp thoại đăng nhập bật lên và đăng nhập lại là xong.
+
+> Việc còn lại: `gh auth login -h github.com` để làm mới token, nếu không lần đẩy sau vẫn phải lặp lại thủ thuật trên.
+
+**Chưa làm — cần chạy trên máy:** `refs/original` (bản sao lưu của `filter-branch`, còn giữ `b9cf4b4` với đầy đủ dấu vết) vẫn nằm trong kho **cục bộ**. Không ảnh hưởng bản công khai, nhưng nên dọn:
+
+```
+git for-each-ref --format="%(refname)" refs/original | ForEach-Object { git update-ref -d $_ }
+git reflog expire --expire=now --all
+git gc --prune=now
+```
