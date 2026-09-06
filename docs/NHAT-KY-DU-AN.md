@@ -656,3 +656,31 @@ Cả hai đều **không** đụng phép đếm 162 tệp và không đụng s�
 ### Đóng băng mã nguồn từ đây
 
 `npm outdated` cho thấy nhiều gói cách bản mới nhất vài phiên bản chính — `express` 4→5, `prisma` 5→7, `typescript` 5→7, `bcryptjs` 2→3. Đây đều là thay đổi phá vỡ. **Không nâng trước ngày bảo vệ.** Đóng băng là quyết định có chủ đích, và đã ghi vào tài liệu ôn để trả lời nếu bị hỏi, chứ không phải sự bỏ sót.
+
+## 06/09/2026 — Chạy hai ca hồi quy S05 và S06 trên môi trường cục bộ
+
+Commit `5f5888d` · Node **v24.19.0** (CI dùng Node 22 — có khác nhánh, ghi nhận để đối chiếu) · Chrome 152.0.7977.76 · DB Docker `postgres:16-alpine` cổng 5433, đã seed lại.
+
+### Kết quả
+
+| Ca | Bước | Kết quả | Bằng chứng |
+|---|---|---|---|
+| S06 | 1–3 | **PASS** | `POST /api/v1/auth/login → 401` kèm preflight `OPTIONS 204`. **Không có request nào tới `/auth/refresh`.** Thông báo "Email hoặc mật khẩu không đúng" hiện tại form; biến đánh dấu đặt trước khi bấm vẫn còn sau 2,5 s ⇒ trang không tải lại; không có token trong `localStorage`. |
+| S06 | 4 | **PASS** | Email chưa đăng ký nhận **đúng cùng một thông báo**, không tiết lộ email có tồn tại hay không. |
+| S05 | 1–2 | **PASS** | URL `?search=JavaScript`, danh sách còn đúng khóa JavaScript. |
+| S05 | 3–4 | **PASS** | Đổi ngay sang `React`: URL `?search=React`, ô nhập giữ `React`, danh sách còn đúng khóa ReactJS. Không nhảy về từ khóa cũ. |
+| S05 | 5–6 | **PASS** | Back: URL, ô nhập, danh sách **cùng nói `JavaScript`**. |
+| S05 | 7 | **PASS** | Forward: cả ba quay lại `React`. |
+| S05 | 8 | **PASS** | Lặp bước 1–7 với **mọi XHR bị làm trễ 3000 ms**. Response `JavaScript` về **sau** khi người dùng đã chuyển sang `React`; cả ba vẫn nhất quán ở `React`. Back → `JavaScript` đủ ba thứ; Forward → `React` đủ ba thứ. Lịch sử tăng đúng 2 mục. |
+
+Lỗi đã vá `6f3d746` (ô tìm kiếm nhảy về từ khóa cũ) và lỗi `axiosClient.ts` (401 kích hoạt vòng refresh vô ích) **đều không tái phát**.
+
+### Ba trở ngại môi trường, đã xử lý — cần biết nếu dựng lại
+
+1. **Docker Desktop sập khi khởi động từ shell điều khiển từ xa.** `%LOCALAPPDATA%\Docker\log\host\*.log` ghi `initializing backend: ... unable to get 'ProgramData'`. Shell điều khiển thiếu hai biến `ProgramData` và `ALLUSERSPROFILE`; Docker Desktop kế thừa môi trường khuyết đó rồi sập. Đặt lại hai biến rồi khởi động **vẫn sập**. Cách chạy được: gọi qua Explorer — `explorer.exe "<đường dẫn>\Docker Desktop.exe"` — tiến trình khi đó kế thừa môi trường đầy đủ của shell Windows. Engine lên bình thường (server 29.7.2). Mở tay từ Start Menu cũng cho kết quả tương đương.
+
+2. **Browser pane tích hợp không dùng được cho đồ án.** Nó chặn mọi cổng localhost ngoài cổng preview, nên trang ở 5173 không gọi được API ở 3000 (`Failed to fetch`, kể cả `mode:'no-cors'`). **Đây là giới hạn công cụ, không phải lỗi dự án.** Mọi ca phải chạy trong Chrome thật, đúng như mục 0.1 của hướng dẫn vốn đã yêu cầu.
+
+3. **Phím giả lập chỉ vào được khi cửa sổ Chrome đang ở foreground.** Mở terminal A và B bằng `Start-Process` đẩy Chrome xuống dưới; từ đó `computer type` báo thành công nhưng ô nhập vẫn rỗng — một kiểu thất bại im lặng rất dễ nhầm là lỗi ứng dụng. Luôn kiểm lại `input.value` sau khi gõ trước khi kết luận bất cứ điều gì. `SetForegroundWindow` từ tiến trình nền bị Windows chặn; cách chắc chắn là người dùng nhấp một lần vào cửa sổ Chrome.
+
+Không tệp nào trong `backend/src` hay `frontend/src` bị đụng tới. Phép đếm 162 tệp và Bảng 1.6 giữ nguyên.
