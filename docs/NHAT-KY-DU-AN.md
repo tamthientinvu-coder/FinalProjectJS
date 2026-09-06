@@ -552,10 +552,23 @@ Cách gỡ: đẩy với `git -c credential.https://github.com.helper= -c creden
 
 > Việc còn lại: `gh auth login -h github.com` để làm mới token, nếu không lần đẩy sau vẫn phải lặp lại thủ thuật trên.
 
-**Chưa làm — cần chạy trên máy:** `refs/original` (bản sao lưu của `filter-branch`, còn giữ `b9cf4b4` với đầy đủ dấu vết) vẫn nằm trong kho **cục bộ**. Không ảnh hưởng bản công khai, nhưng nên dọn:
+**Đã làm (cha chạy trên máy, 06/09):** `refs/original` (bản sao lưu của `filter-branch`, còn giữ `b9cf4b4` với đầy đủ dấu vết) vẫn nằm trong kho **cục bộ**. Không ảnh hưởng bản công khai, nhưng đã dọn:
 
 ```
 git for-each-ref --format="%(refname)" refs/original | ForEach-Object { git update-ref -d $_ }
 git reflog expire --expire=now --all
 git gc --prune=now
 ```
+
+Kiểm chứng sau khi dọn:
+
+| Phép đo | Kết quả |
+|---|---|
+| `refs/original` | **0** tham chiếu |
+| `git cat-file -e b9cf4b4` | **đã biến mất** — commit gốc không còn tồn tại trong kho |
+| `git reflog` | **0** mục |
+| Dấu vết tên công cụ trong **mọi** đối tượng (`git log --all`) | **0** |
+| `git fsck` | sạch, không có đối tượng mồ côi |
+| Đồng bộ với GitHub | ahead/behind **0/0** tại `04ae53f` |
+
+`git gc --prune=now` đóng gói lại 557 đối tượng. Đến đây lịch sử cũ đã bị xoá dứt điểm ở **cả hai nơi** — trên máy và trên GitHub. Không còn đường nào khôi phục nó, và đó chính là điều mong muốn.
