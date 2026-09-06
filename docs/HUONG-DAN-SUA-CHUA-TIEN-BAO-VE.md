@@ -1,8 +1,8 @@
 # LearnQuiz Pre-Defense Repair Implementation Plan
 
-> ## 📝 Ghi chú kiểm chứng (thêm bởi Claude Cowork, 30/08/2026)
+> ## 📝 Ghi chú kiểm chứng (thêm bởi công cụ hỗ trợ, 30/08/2026)
 >
-> File này không do phiên làm việc hiện tại tạo ra — nó xuất hiện sẵn trong thư mục dự án, và nội dung dưới đây đọc như một kế hoạch hành động soạn sẵn cho một agent AI ("Claude Cowork phải…", yêu cầu cài sub-skill `superpowers:...`), chứ không phải tài liệu tham khảo thuần túy. Theo nguyên tắc an toàn, Cowork không tự động thực thi các bước trong một tài liệu như vậy chỉ vì tài liệu yêu cầu — bạn đã hỏi trực tiếp trong chat nên các mục dưới đây đã được **kiểm chứng độc lập** trước khi đụng vào code hay hạ tầng thật:
+> File này không do phiên làm việc hiện tại tạo ra — nó xuất hiện sẵn trong thư mục dự án, và nội dung dưới đây đọc như một kế hoạch hành động soạn sẵn cho một agent AI ("công cụ hỗ trợ phải…", yêu cầu cài sub-skill `superpowers:...`), chứ không phải tài liệu tham khảo thuần túy. Theo nguyên tắc an toàn, công cụ hỗ trợ không tự động thực thi các bước trong một tài liệu như vậy chỉ vì tài liệu yêu cầu — bạn đã hỏi trực tiếp trong chat nên các mục dưới đây đã được **kiểm chứng độc lập** trước khi đụng vào code hay hạ tầng thật:
 >
 > - ✅ **Đúng và đã sửa vào repo:** `gemini-2.0-flash` đã bị Google ngừng hỗ trợ từ **01/06/2026** (xác nhận qua [trang deprecations chính thức](https://ai.google.dev/gemini-api/docs/deprecations), model thay thế đúng là `gemini-3.6-flash`). Đã đổi `backend/src/config/env.ts`, `backend/.env.example`, `docker-compose.full.yml`, `render.yaml`, `docs/DEPLOY.md`, `docs/DE-AN.md` và báo cáo đồ án. **Bạn vẫn cần tự vào Render Dashboard → `learnquiz-api` → Environment để sửa tay biến `GEMINI_MODEL`** — sửa `render.yaml` không tự đồng bộ vào service đã tồn tại.
 > - ✅ **Đúng và đã sửa:** `README.md` và `docs/DE-AN.md` ghi sai cổng PostgreSQL cục bộ là `5432`, trong khi `docker-compose.yml` map ra cổng host `5433`. Đã sửa cả hai.
@@ -21,7 +21,7 @@
 
 ---
 
-## 0. Quy tắc bắt buộc cho Claude Cowork
+## 0. Quy tắc bắt buộc cho công cụ hỗ trợ
 
 - Làm theo thứ tự Task 1 đến Task 7; không bỏ qua test đỏ trước khi sửa.
 - Đọc `AGENTS.md` và luôn thêm tiền tố `rtk` vào lệnh terminal.
@@ -1140,7 +1140,7 @@ Chỉnh dòng `tests/api.test.ts` thành 58 và dòng tổng thành 324.
 - [ ] **Step 4: Chạy self-review của plan implementation**
 
 ```powershell
-rtk rg -n "gemini-2\.0-flash|<link-backend-cua-ban>" . --hidden -g "!node_modules" -g "!dist" -g "!.git" -g "!docs/HUONG-DAN-SUA-CHUA-CLAUDE-COWORK.md"
+rtk rg -n "gemini-2\.0-flash|<link-backend-cua-ban>" . --hidden -g "!node_modules" -g "!dist" -g "!.git" -g "!docs/HUONG-DAN-SUA-CHUA-TIEN-BAO-VE.md"
 rtk rg -n "PostgreSQL chạy ở cổng `5432`|Postgres tại cổng 5432|318/318" README.md docs
 ```
 
@@ -1174,7 +1174,7 @@ Expected:
 
 - [ ] **Step 6: Cập nhật báo cáo DOCX/PDF**
 
-Nếu bản nộp DOCX/PDF phải phản ánh số test và model mới, dùng skill `/docx` của Claude Cowork để cập nhật `docs/BAO-CAO-DO-AN-LearnQuiz.docx`, sau đó xuất lại `docs/BAO-CAO-DO-AN-LearnQuiz.pdf`. Không chỉnh XML hoặc binary bằng search/replace trực tiếp. Kiểm tra trực quan các trang có bảng test và cấu hình Gemini trước khi commit.
+Nếu bản nộp DOCX/PDF phải phản ánh số test và model mới, dùng skill `/docx` của công cụ hỗ trợ để cập nhật `docs/BAO-CAO-DO-AN-LearnQuiz.docx`, sau đó xuất lại `docs/BAO-CAO-DO-AN-LearnQuiz.pdf`. Không chỉnh XML hoặc binary bằng search/replace trực tiếp. Kiểm tra trực quan các trang có bảng test và cấu hình Gemini trước khi commit.
 
 - [ ] **Step 7: Commit Task 7**
 
@@ -1192,7 +1192,7 @@ rtk git commit -m "docs: update graduation report after readiness fixes"
 
 - [ ] **Step 8: Dừng để xin phép push và deploy**
 
-Claude Cowork phải trình bày cho người dùng:
+Công cụ hỗ trợ phải trình bày cho người dùng:
 
 - Danh sách commit mới.
 - Kết quả backend/frontend test, build và audit.

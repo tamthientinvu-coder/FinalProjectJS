@@ -233,9 +233,9 @@ Bộ hồ sơ nay nhất quán ở cả năm nơi: mã nguồn · `.md` · DOCX 
 
 ## 2026-09-05 (khuya) — Truy nguyên lỗi E2E "Back khôi phục từ khóa"
 
-### Bối cảnh — kèm một lỗi quy trình của Cowork
+### Bối cảnh — kèm một lỗi quy trình của công cụ hỗ trợ
 
-Commit `7dcc89b` mang thông điệp *"sửa lỗi rtk trong markdown"* nhưng thực tế **gom luôn 7 tệp**: hai tài liệu mới, ba ca E2E mới, `axiosClient.ts`, `CourseListPage.tsx`, `LearnPage.tsx`. Nguyên nhân: Cowork chạy `git add -A` mà không soát `git status` trước, nên quét cả phần đang làm dở trong worktree. Thông điệp commit vì thế mô tả sai nội dung. **Bài học:** luôn `git status` trước khi `git add -A`, hoặc chỉ `git add` đúng tệp đã sửa.
+Commit `7dcc89b` mang thông điệp *"sửa lỗi rtk trong markdown"* nhưng thực tế **gom luôn 7 tệp**: hai tài liệu mới, ba ca E2E mới, `axiosClient.ts`, `CourseListPage.tsx`, `LearnPage.tsx`. Nguyên nhân: công cụ hỗ trợ chạy `git add -A` mà không soát `git status` trước, nên quét cả phần đang làm dở trong worktree. Thông điệp commit vì thế mô tả sai nội dung. **Bài học:** luôn `git status` trước khi `git add -A`, hoặc chỉ `git add` đúng tệp đã sửa.
 
 Hệ quả: E2E tăng từ 3 lên **6 ca**, và ca thứ 5 hỏng làm **CI đỏ trên `main`**.
 
@@ -469,6 +469,31 @@ git gc --prune=now
 
 Sau đó `git log --all --grep="Co-Authored-By"` phải trả về rỗng.
 
-### Điểm chưa nhất quán, để cha quyết
+### Điểm chưa nhất quán — đã xử lý ở mục dưới
 
-Hai tệp trong repo vẫn nêu tên công cụ hỗ trợ: `docs/HUONG-DAN-SUA-CHUA-CLAUDE-COWORK.md` — **tên tệp có sẵn chữ đó** cùng 6 lần nhắc trong nội dung — và một số đoạn trong chính cuốn nhật ký này. Báo cáo DOCX và slide PPTX **không nhắc lần nào**, nên bộ hồ sơ nộp cho hội đồng vốn đã không đề cập.
+Tại thời điểm ghi mục này, hai tệp trong repo còn nêu tên riêng của công cụ hỗ trợ: một tệp kế hoạch (kể cả trong **tên tệp**) và vài đoạn trong chính cuốn nhật ký này. Báo cáo DOCX và slide PPTX **không nhắc lần nào**, nên bộ hồ sơ nộp cho hội đồng vốn đã không đề cập. Cách xử lý ghi ở mục cuối cùng.
+
+
+---
+
+## 2026-09-05 (bổ sung) — Chuẩn hoá cách gọi công cụ hỗ trợ trong tài liệu
+
+Sau khi lịch sử commit đã được viết lại, còn lại chỗ nêu tên riêng của công cụ trong tài liệu. Đã chuẩn hoá thành cách gọi trung tính **"công cụ hỗ trợ"** cho nhất quán với lịch sử commit.
+
+| Việc | Chi tiết |
+|---|---|
+| Đổi tên tệp | Tệp kế hoạch sửa chữa tiền bảo vệ — tên cũ có chứa tên riêng của công cụ — nay là **`HUONG-DAN-SUA-CHUA-TIEN-BAO-VE.md`** (dùng `git mv` để giữ được lịch sử tệp) |
+| Sửa trong tệp kế hoạch | 6 chỗ: ghi chú kiểm chứng đầu tệp · tiêu đề mục 0 · câu về skill `/docx` · câu ở Step 8 · một câu về nguyên tắc an toàn · một chỗ tự trỏ tới tên tệp cũ trong lệnh `rg` |
+| Sửa trong nhật ký | 2 chỗ: tiêu đề *"lỗi quy trình của…"* và đoạn trỏ tới tên tệp cũ |
+
+### Kiểm chứng sau khi sửa
+
+| Nơi | Kết quả |
+|---|---|
+| Toàn bộ repo (trừ `node_modules`, `.git`, `dist`) | **0** lần xuất hiện |
+| Tên tệp trong `docs/` | **0** tệp |
+| `BAO-CAO-DO-AN-LearnQuiz.docx` · `SLIDE-BAO-VE-LearnQuiz.pptx` | **0** part XML |
+| Cả ba tệp `.pdf` trong `docs/` | **0** |
+| Lịch sử commit (`git log --all --grep`) | **0** |
+
+Toàn bộ hồ sơ nay dùng một cách gọi duy nhất. Nội dung kỹ thuật của cuốn nhật ký giữ nguyên — vẫn ghi đủ các phát hiện, các lỗi đã mắc và cách khắc phục, vì đó mới là phần có giá trị.
