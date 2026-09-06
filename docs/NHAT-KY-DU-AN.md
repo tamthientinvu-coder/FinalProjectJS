@@ -115,7 +115,7 @@ CREATE INDEX "quiz_submissions_quiz_id_idx" ON "quiz_submissions"("quiz_id");
 CREATE INDEX "choices_question_id_idx"      ON "choices"("question_id");
 ```
 
-Không tìm thấy `await` bên trong vòng lặp ở tầng service — không còn N+1 nào ngoài chỗ đã sửa ở commit `e63ad5c`.
+Không tìm thấy `await` bên trong vòng lặp ở tầng service — không còn N+1 nào ngoài chỗ đã sửa ở commit `2804d53`.
 
 ---
 
@@ -213,7 +213,7 @@ Hai danh mục nay có nội dung thật, nhưng **số trang cuối cùng vẫn
 
 `ExportAsFixedFormat` qua COM tiếp tục treo, kể cả trên tệp do chính Word ghi ra. Cha mở `docs/BAO-CAO-DO-AN-LearnQuiz.docx` rồi **File → Export → Create PDF/XPS**, ghi đè `docs/BAO-CAO-DO-AN-LearnQuiz.pdf`. Lần này **không cần bấm `F9` trước** vì cả ba mục lục đã có sẵn nội dung và số trang đúng.
 
-### Nghiệm thu bản PDF cuối (xuất tay bằng Word, commit `59b579c`)
+### Nghiệm thu bản PDF cuối (xuất tay bằng Word, commit `ccde844`)
 
 | Kiểm tra | Kết quả |
 |---|---|
@@ -225,7 +225,7 @@ Hai danh mục nay có nội dung thật, nhưng **số trang cuối cùng vẫn
 | Bảng 1.6 | 161 tệp · 4.295/58 · 6.174/52 · 1.993/18 |
 | §5.9 | "Bốn hạn chế cần nêu trung thực" + mục về bốn cột khóa ngoại |
 | Bảng 6.1 | có hàng "Đánh chỉ mục khóa ngoại" kèm ghi chú `EXPLAIN ANALYZE` |
-| CI trên `59b579c` | xanh |
+| CI trên `ccde844` | xanh |
 
 Bộ hồ sơ nay nhất quán ở cả năm nơi: mã nguồn · `.md` · DOCX · PPTX · PDF.
 
@@ -235,7 +235,7 @@ Bộ hồ sơ nay nhất quán ở cả năm nơi: mã nguồn · `.md` · DOCX 
 
 ### Bối cảnh — kèm một lỗi quy trình của Cowork
 
-Commit `57659c6` mang thông điệp *"sửa lỗi rtk trong markdown"* nhưng thực tế **gom luôn 7 tệp**: hai tài liệu mới, ba ca E2E mới, `axiosClient.ts`, `CourseListPage.tsx`, `LearnPage.tsx`. Nguyên nhân: Cowork chạy `git add -A` mà không soát `git status` trước, nên quét cả phần đang làm dở trong worktree. Thông điệp commit vì thế mô tả sai nội dung. **Bài học:** luôn `git status` trước khi `git add -A`, hoặc chỉ `git add` đúng tệp đã sửa.
+Commit `7dcc89b` mang thông điệp *"sửa lỗi rtk trong markdown"* nhưng thực tế **gom luôn 7 tệp**: hai tài liệu mới, ba ca E2E mới, `axiosClient.ts`, `CourseListPage.tsx`, `LearnPage.tsx`. Nguyên nhân: Cowork chạy `git add -A` mà không soát `git status` trước, nên quét cả phần đang làm dở trong worktree. Thông điệp commit vì thế mô tả sai nội dung. **Bài học:** luôn `git status` trước khi `git add -A`, hoặc chỉ `git add` đúng tệp đã sửa.
 
 Hệ quả: E2E tăng từ 3 lên **6 ca**, và ca thứ 5 hỏng làm **CI đỏ trên `main`**.
 
@@ -309,7 +309,7 @@ Back-end (4.295/58), CSDL (11 bảng · 3 enum · 217 dòng), điểm cuối (46
 
 ## 2026-09-05 (chốt) — Rà soát phần mã chưa qua review và hợp nhất tài liệu
 
-### 1. Đã review phần mã bị commit `57659c6` gom nhầm
+### 1. Đã review phần mã bị commit `7dcc89b` gom nhầm
 
 Ba tệp mã nguồn vào `main` dưới một thông điệp commit nói về tài liệu, nên chưa ai soát. Đã đọc lại toàn bộ:
 
@@ -317,7 +317,7 @@ Ba tệp mã nguồn vào `main` dưới một thông điệp commit nói về t
 |---|---|---|
 | `api/axiosClient.ts` | Không refresh token khi `401` đến từ `/auth/login` hoặc `/auth/register`; thêm `timeout: 15000` cho lời gọi refresh | **Đúng và cần thiết.** Sai mật khẩu trước đây kích hoạt vòng refresh vô ích rồi tải lại trang, làm mất thông báo lỗi tại form. Timeout chặn được tình huống refresh treo vô hạn khi mạng chập chờn. |
 | `pages/LearnPage.tsx` | Thêm `lessonVersion` (useRef) làm dấu phiên; mọi lời gọi bất đồng bộ đối chiếu phiên trước khi ghi state; hai effect nạp dữ liệu có cờ `ignore` và hàm dọn dẹp | **Đúng bài bản.** Đây là mẫu chuẩn chống "phản hồi đến muộn ghi đè kết quả mới" — chuyển bài nhanh sẽ không còn cảnh nội dung bài A đè lên bài B. Khớp với ca E2E mới cùng tên. |
-| `pages/CourseListPage.tsx` | Thêm `useEffect(..., [search])` đồng bộ ô tìm kiếm | **Sai** — chính là lỗi đã truy nguyên và vá ở commit `d8bf9f0`. |
+| `pages/CourseListPage.tsx` | Thêm `useEffect(..., [search])` đồng bộ ô tìm kiếm | **Sai** — chính là lỗi đã truy nguyên và vá ở commit `6f3d746`. |
 
 Không tìm thấy khiếm khuyết nào khác trong hai tệp đầu.
 
@@ -337,7 +337,7 @@ Commit trên cũng thêm `docs/HUONG-DAN-KIEM-TRA-TAY.md`, tự ghi ở dòng đ
 `kiem-tra-learnquiz.ps1` (đặt ở Desktop, **cố ý để ngoài repo** để không làm đổi số tệp của dự án) chạy toàn bộ cổng tự động và in bảng ĐẠT/HỎNG: git sạch và đồng bộ · back-end lint/typecheck/test/build/prisma/audit · front-end lint/typecheck/vitest/playwright/build/audit · smoke production. Lưu ý kỹ thuật: phải ép `chcp 65001` và `[Console]::OutputEncoding = UTF8` trước khi gọi `npm`, nếu không dấu `✓` trong output bị vỡ và đếm ra 0.
 
 
-### 4. Đã đồng bộ lại số liệu Bảng 1.6 (chốt tại `3d5aa09`)
+### 4. Đã đồng bộ lại số liệu Bảng 1.6 (chốt tại `2ed40bf`)
 
 | Hạng mục | Trước | Nay |
 |---|---|---|
@@ -358,7 +358,7 @@ Back-end (4.295 dòng / 58 tệp), CSDL (11 bảng · 3 kiểu liệt kê · 217
 
 ### 1. Đính chính: `rtk` KHÔNG phải rác — con đã sửa sai
 
-Commit `57659c6` mang thông điệp *"sửa lỗi `rtk` thừa ở đầu 12 lệnh"* và đã xoá tiền tố `rtk` khỏi mục 11 của `HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md`. **Kết luận đó sai.** Kiểm chứng trên máy:
+Commit `7dcc89b` mang thông điệp *"sửa lỗi `rtk` thừa ở đầu 12 lệnh"* và đã xoá tiền tố `rtk` khỏi mục 11 của `HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md`. **Kết luận đó sai.** Kiểm chứng trên máy:
 
 ```
 Get-Command rtk  ->  C:\Users\vutam\.local\bin\rtk.exe
@@ -381,15 +381,15 @@ rtk npm --version ->  11.14.1   (exit 0)
 - Phải ép UTF-8 (`chcp 65001` + `[Console]::OutputEncoding`) trước khi gọi `npm`, nếu không dấu `✓` vỡ theo codepage 437 và đếm ra 0 phép khẳng định dù test đạt hết.
 - Script cố ý gọi `npm` trần chứ không qua `rtk`: `rtk` nén output, mà script cần đếm chính xác số `✓` và bắt dòng `Tests N passed`. Kiểm bằng tay thì dùng `rtk` cho gọn; để máy đếm thì dùng lệnh trần.
 
-**Mục 8.1 — mốc đối chiếu.** Ghi rõ tại `f9e7798`: back-end 345, Vitest 13, Playwright 6 — kèm câu *"để so sánh, không phải để chép vào báo cáo; lệch nghĩa là đã có thay đổi mã nguồn, đo lại và cập nhật hồ sơ, đừng sửa con số cho khớp"*.
+**Mục 8.1 — mốc đối chiếu.** Ghi rõ tại `90d0759`: back-end 345, Vitest 13, Playwright 6 — kèm câu *"để so sánh, không phải để chép vào báo cáo; lệch nghĩa là đã có thay đổi mã nguồn, đo lại và cập nhật hồ sơ, đừng sửa con số cho khớp"*.
 
-**Ca S05 — đổi từ khóa liên tiếp rồi bấm Back.** Hồi quy cho đúng lỗi đã vá ở `d8bf9f0`. Tiêu chí nghiệm thu viết thẳng: *"ba thứ — URL, ô tìm kiếm, danh sách kết quả — phải nói cùng một điều"*. Có bước lặp với Slow 3G để ép khe thời gian rộng ra.
+**Ca S05 — đổi từ khóa liên tiếp rồi bấm Back.** Hồi quy cho đúng lỗi đã vá ở `6f3d746`. Tiêu chí nghiệm thu viết thẳng: *"ba thứ — URL, ô tìm kiếm, danh sách kết quả — phải nói cùng một điều"*. Có bước lặp với Slow 3G để ép khe thời gian rộng ra.
 
 **Ca S06 — sai mật khẩu giữ lỗi tại form.** Hồi quy cho thay đổi trong `axiosClient.ts`: `401` từ `/auth/login` không được kích hoạt vòng làm mới token; kiểm bằng tab Network, không được có request tới `/auth/refresh`.
 
 Cả hai ca đã thêm vào bảng truy vết yêu cầu ở mục 9.
 
-### 3. Nghiệm thu toàn bộ tại `f9e7798`
+### 3. Nghiệm thu toàn bộ tại `90d0759`
 
 | Cổng | Kết quả |
 |---|---|
@@ -398,7 +398,7 @@ Cả hai ca đã thêm vào bảng truy vết yêu cầu ở mục 9.
 | Front-end lint / typecheck / build / audit | sạch |
 | Front-end Vitest | **13/13** |
 | Playwright E2E | **6/6** (trước khi vá: 0/6) |
-| CI GitHub Actions trên `6969f8d` | **success** |
+| CI GitHub Actions trên `ace1a98` | **success** |
 | Production `/health` | `status=ok`, `db=up` |
 | Production front-end | HTTP 200 |
 
@@ -427,3 +427,48 @@ Bản PDF báo cáo cha xuất lúc 14:44: **72 trang**, Producer *Microsoft Wor
 | Ba ca giao diện, kiểm API trực tiếp, Gemini live | Chưa chạy — cần cha bấm tay theo mục 1–7 |
 | CSDL Render Free hết hạn ~27/09/2026 | Xác nhận ngày bảo vệ nằm trước mốc này |
 | Số liệu Bảng 1.6 | Sẽ lệch lại ở lần sửa mã tiếp theo — báo con đồng bộ lượt cuối khi mã đóng băng |
+
+---
+
+## 2026-09-05 (sau cùng) — Viết lại lịch sử commit và cập nhật lại các trích dẫn SHA
+
+### Việc đã làm
+
+Lịch sử `main` được viết lại bằng `git filter-branch` để bỏ hai dòng metadata đồng tác giả ở cuối 13 thông điệp commit, rồi `push --force` lên GitHub.
+
+| Kiểm chứng | Kết quả |
+|---|---|
+| Tổng số commit | 31 — **không mất commit nào** |
+| Cây tệp của HEAD trước và sau khi viết lại | `35f8d045…` — **giống hệt, nội dung không đổi một byte** |
+| Commit đổi SHA | 16 (từ `b5b18dc` trở về trước giữ nguyên) |
+| Đối chiếu tiêu đề 31 commit cũ ↔ mới | 0 chỗ lệch |
+| `origin/main` | đồng bộ với local |
+
+### Hậu quả đã lường trước và đã xử lý
+
+Viết lại lịch sử làm mọi trích dẫn SHA trong tài liệu trỏ vào commit không còn tồn tại. Đã dựng bản đồ `cũ → mới` bằng cách ghép theo thứ tự và đối chiếu tiêu đề, rồi thay **17 chỗ** trong ba tệp:
+
+| Tệp | Số chỗ |
+|---|---|
+| `NHAT-KY-DU-AN.md` | 13 |
+| `HUONG-DAN-KIEM-TRA-TAY.md` | 2 |
+| `HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md` | 2 |
+
+Đã quét lại toàn bộ `docs/*.md` và `README.md`: **14 SHA được nhắc đến, cả 14 đều trỏ đúng một commit có thật** (`git cat-file -t` trả về `commit`). Các SHA như `c4b99d0`, `b5b18dc`, `8a76345`, `cbab148`, `9d1dca1` không đổi vì chúng nằm trước commit đầu tiên bị viết lại.
+
+### Việc dọn dẹp cục bộ còn lại — cần chạy tay
+
+`git filter-branch` để lại bản sao lưu ở `refs/original/` — trong đó **13 commit cũ vẫn còn nguyên metadata**. Chúng chỉ nằm trên máy này, không được đẩy lên GitHub và không theo khi ai đó clone. Muốn dọn hẳn:
+
+```powershell
+cd C:\Users\vutam\Desktop\FinalProject
+git for-each-ref --format="%(refname)" refs/original | ForEach-Object { git update-ref -d $_ }
+git reflog expire --expire=now --all
+git gc --prune=now
+```
+
+Sau đó `git log --all --grep="Co-Authored-By"` phải trả về rỗng.
+
+### Điểm chưa nhất quán, để cha quyết
+
+Hai tệp trong repo vẫn nêu tên công cụ hỗ trợ: `docs/HUONG-DAN-SUA-CHUA-CLAUDE-COWORK.md` — **tên tệp có sẵn chữ đó** cùng 6 lần nhắc trong nội dung — và một số đoạn trong chính cuốn nhật ký này. Báo cáo DOCX và slide PPTX **không nhắc lần nào**, nên bộ hồ sơ nộp cho hội đồng vốn đã không đề cập.

@@ -7,7 +7,7 @@
 
 
 **Đối tượng:** đúng phần mà môi trường review cloud KHÔNG chạy được — cần Docker Desktop + trình duyệt thật + (tùy chọn) API key Gemini còn hạn mức, đều chỉ có trên máy cha.
-**Mốc mã nguồn đã đối chiếu lại:** `3db08fc`, nhánh `main`, ngày 04/09/2026.
+**Mốc mã nguồn đã đối chiếu lại:** `f69ae4d`, nhánh `main`, ngày 04/09/2026.
 **Nguyên tắc:** làm đúng thứ tự — dựng CSDL thật trước, xong mới chạy kịch bản. Mỗi bước có "Kỳ vọng" — lệch kỳ vọng thì dừng lại, ghi vào bảng cuối, không tự đoán là lỗi thao tác.
 
 ## Kết quả kiểm tra kỹ thuật ngày 04/09/2026
@@ -590,4 +590,4 @@ Xong bảng này, gửi lại đây (chụp ảnh hoặc gõ tay kết quả) �
 
 ---
 
-*Soạn lần đầu ngày 02/09/2026; mở rộng và kiểm tra lại ngày 04/09/2026 trên commit `3db08fc` (route, schema, seed, test, build, Prisma, Docker config và smoke production).*
+*Soạn lần đầu ngày 02/09/2026; mở rộng và kiểm tra lại ngày 04/09/2026 trên commit `f69ae4d` (route, schema, seed, test, build, Prisma, Docker config và smoke production).*

@@ -254,7 +254,7 @@ Dùng **khóa mới riêng cho mỗi vòng** để không phụ thuộc lịch s
 5. Không được hiển thị bản tóm tắt A dưới tiêu đề B hoặc dùng trạng thái A để ghi nhầm B. Ghi FAIL nếu tái hiện; kèm thứ tự request.
 6. Trả Network về No throttling.
 
-### S05 — Đổi từ khóa tìm kiếm liên tiếp và bấm Back *(hồi quy cho lỗi đã vá `d8bf9f0`)*
+### S05 — Đổi từ khóa tìm kiếm liên tiếp và bấm Back *(hồi quy cho lỗi đã vá `6f3d746`)*
 
 Ca này dựng lại đúng một lỗi có thật đã được vá — người gõ nhanh từng thấy ô tìm kiếm tự nhảy về từ khóa cũ.
 
@@ -492,7 +492,7 @@ rtk npm audit
 
 Mỗi lệnh phải exit 0. Ghi số test từ output thật; không suy ra từ số ghi trong README.
 
-Mốc đối chiếu tại `f9e7798` (ngày 05/09/2026) — **để so sánh, không phải để chép vào báo cáo**: back-end **345** phép khẳng định, front-end **13** ca Vitest, Playwright **6** ca. Lệch so với mốc này nghĩa là đã có thay đổi mã nguồn: đo lại và cập nhật hồ sơ, đừng sửa con số cho khớp. Playwright hiện dùng API mock, không kiểm chứng PostgreSQL. Không chạy `npm test` ở root vì root không có package.json.
+Mốc đối chiếu tại `90d0759` (ngày 05/09/2026) — **để so sánh, không phải để chép vào báo cáo**: back-end **345** phép khẳng định, front-end **13** ca Vitest, Playwright **6** ca. Lệch so với mốc này nghĩa là đã có thay đổi mã nguồn: đo lại và cập nhật hồ sơ, đừng sửa con số cho khớp. Playwright hiện dùng API mock, không kiểm chứng PostgreSQL. Không chạy `npm test` ở root vì root không có package.json.
 
 ### 8.2. Docker full-stack
 
