@@ -497,3 +497,36 @@ Sau khi lịch sử commit đã được viết lại, còn lại chỗ nêu tê
 | Lịch sử commit (`git log --all --grep`) | **0** |
 
 Toàn bộ hồ sơ nay dùng một cách gọi duy nhất. Nội dung kỹ thuật của cuốn nhật ký giữ nguyên — vẫn ghi đủ các phát hiện, các lỗi đã mắc và cách khắc phục, vì đó mới là phần có giá trị.
+
+---
+
+## 05/09/2026 — Kiểm chứng trước khi đẩy: bản viết lại lịch sử **chưa** lên GitHub
+
+Sau lần `commit --amend` cuối, kịch bản báo `chưa đẩy = 18` trong khi dự kiến chỉ là 2. Con số đó không phải lỗi đếm — nó là dấu hiệu của một việc quan trọng hơn.
+
+### Đối chiếu
+
+| Phép đo | Kết quả |
+|---|---|
+| `git ls-remote origin main` | `b9cf4b4` — **bản cũ**, trước khi viết lại lịch sử |
+| `HEAD` cục bộ | `c51de62` |
+| Ahead / behind | **18 / 16** (hai nhánh đã rẽ đôi) |
+| `git diff b9cf4b4 af3437a` (cây tệp) | **rỗng** — việc viết lại chỉ đổi thông điệp commit, không đụng tới nội dung tệp |
+| Dấu vết tên công cụ trong 20 commit trên GitHub | **26** dòng còn nguyên |
+
+Kết luận: `git filter-branch` đã chạy đúng, nhưng lần đẩy sau đó **chưa hề tới GitHub**. Bản trên máy sạch; bản công khai thì chưa. Muốn dứt điểm phải đẩy **ép** (`--force-with-lease`), vì hai nhánh đã rẽ đôi — `git push` thường sẽ bị từ chối.
+
+> Bài học: sau một lần viết lại lịch sử, không được coi "đã chạy lệnh" là "đã xong". Phải hỏi lại máy chủ bằng `git ls-remote` — đó là nguồn sự thật duy nhất.
+
+### Ba tệp "bẩn" khi nhìn từ cầu nối Linux — chỉ là ảo giác CR/LF
+
+`git status` cho hai kết quả khác nhau tuỳ chỗ đứng:
+
+| Nơi chạy | Kết quả |
+|---|---|
+| PowerShell trên Windows | **sạch** |
+| Cầu nối Linux | 3 tệp `.md` bị đánh dấu `M` |
+
+Nguyên nhân: Git bản Windows đặt `core.autocrlf = true` ở mức hệ thống (`C:/Program Files/Git/etc/gitconfig`), còn phía Linux thì không, và kho lại **không có `.gitattributes`**. Kiểm chứng: `git diff --numstat` báo 593/542/499 dòng đổi, nhưng `git diff --ignore-cr-at-eol` **rỗng hoàn toàn** — nội dung y hệt, chỉ khác ký tự xuống dòng. Đây cũng là nguồn của ~180 cảnh báo `LF will be replaced by CRLF`.
+
+**Quyết định: chưa thêm `.gitattributes` trước ngày bảo vệ.** Cách chữa đúng là một tệp `.gitattributes` với `* text=auto`, nhưng tệp đó nằm ở gốc kho nên sẽ lọt vào phép đếm `git ls-files` của Bảng 1.6 — **162 → 163** — kéo theo phải vá lại báo cáo `.docx`, slide, và cả hai bản `.pdf`. Đổi một con số đã chốt trong hồ sơ để lấy một khác biệt thuần hiển thị là không đáng. Ghi lại đây để làm sau khi bảo vệ xong.
