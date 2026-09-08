@@ -897,3 +897,155 @@ Vậy con số **162 in trong hồ sơ đã sai sẵn từ trước**, và bản
 `.docx` đã sửa thành 163. **Bản `.pdf` chủ nhiệm đề tài vừa xuất vẫn ghi 164** nên cần xuất lại một lần nữa — bản đó ngoài ra đã rất chuẩn: 72 trang, Producer là Word, và `pdftotext` xác nhận có đủ 4.307 · 6.215 · 2.135 · 357 (16 chỗ) · `instructor5` · Đặng Quốc Bảo.
 
 Không vá thẳng PDF lần này: khác với ngày 05/09, chữ số trong Bảng 1.6 lần này được Word mã hóa thành glyph hex (`<0030006D>…`) chứ không phải ký tự ASCII, nên vá đòi giải mã bảng font — rủi ro không đáng trên tệp 72 trang.
+
+## 08/09/2026 (đêm) — Chạy ca P01 của bộ kiểm tra tay: PASS 12/12
+
+Phiên kiểm tra tay đầu tiên theo `docs/HUONG-DAN-KIEM-TRA-TAY.md`. Cách làm: mỗi lượt một bước, chủ nhiệm đề tài tự thao tác trên Chrome thật, kết quả ghi ngay vào `docs/KET-QUA-KIEM-TRA-2026-09-08.md` trước khi sang bước kế.
+
+### Môi trường lúc bắt đầu (22:14)
+
+| Kiểm | Kết quả |
+|---|---|
+| Docker `learnquiz_db` | Up, healthy, cổng **5433** |
+| Docker `learnquiz_adminer` | Up, cổng 8080 |
+| Backend `:3000/health` | `{"status":"ok","db":"up"}` |
+| Frontend `:5173` | HTTP 200 |
+| ID trong DB | khóa 26–32, bài 45–57, quiz 29–36 — **trùng khớp tài liệu, chưa seed lại** |
+
+Đã truy vấn lại DB trước khi chạy thay vì tin ID cũ trong tài liệu, đúng ràng buộc an toàn.
+
+### Kết quả P01 — PASS, 12 bước, 64 mục kiểm, 0 FAIL
+
+| Bước | Nội dung | KQ |
+|---|---|---|
+| 1–3 | danh sách công khai, chỉ 4 khóa `published`; khóa 28, 31 (`pending`) và 32 (`draft`) không lộ; số bài học, giảng viên, sắp xếp mặc định đều khớp DB | PASS |
+| 4 | tìm `python` → 1 kết quả, **một** request duy nhất (debounce), không phân biệt hoa/thường | PASS |
+| 5 | truy nguyên lỗi đỏ Console — **không thuộc mã đồ án** (xem mục dưới) | PASS |
+| 6 | lọc danh mục → `?category=ngon-ngu-lap-trinh`, 2 khóa | PASS |
+| 7 | lọc kết hợp → `?category=…&level=beginner`, response `meta.total: 2` | PASS |
+| 8 | lọc ra tập rỗng → **200** với `data: []`, `total: 0`, có màn hình trống kèm nút "Xóa toàn bộ bộ lọc" | PASS |
+| 9 | `sort=oldest` → thứ tự đảo đúng, URL serialize giá trị không mặc định | PASS |
+| 10 | `sort=title` → A→Z đúng | PASS |
+| 11 | F5 tại `?sort=title` → giữ nguyên trạng thái; **URL là nguồn sự thật** | PASS |
+| 12 | khách mở thẳng `/courses/28` (khóa `pending`) → **404**, không lộ nội dung | PASS |
+
+Chuỗi **URL → query string → `meta.total` → con số trên giao diện** khớp tuyệt đối ở mọi bộ lọc. Ba chế độ sắp xếp cho ba thứ tự khác nhau trên cùng bốn khóa. Đây là bằng chứng lọc và sắp xếp chạy **phía máy chủ**, không phải lọc cục bộ trên mảng đã tải.
+
+### Hai phát hiện bảo mật đáng nêu khi bảo vệ
+
+**1. Backend trả 404 chứ không phải 403 cho khóa chưa duyệt.** Đây là lựa chọn đúng: 403 sẽ vô tình xác nhận "khóa 28 tồn tại nhưng bạn không được xem", cho phép dò danh sách ID. Trả 404 thì khóa `pending` không phân biệt được với khóa không tồn tại. Response chỉ **60 byte**.
+
+**2. Bộ tiêu đề bảo mật đầy đủ** — đọc trực tiếp từ tab Headers, chứng tỏ Helmet hoạt động:
+
+| Tiêu đề | Giá trị |
+|---|---|
+| `Content-Security-Policy` | `default-src 'self'; base-uri 'self'; font-src 'self' https: data:; form-action 'self'; frame-ancestors 'self'; img-src 'self' data:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self' https: 'unsafe-inline'; upgrade-insecure-requests` |
+| `Access-Control-Allow-Origin` | `http://localhost:5173` — **không** dùng `*` |
+| `Access-Control-Allow-Credentials` | `true` |
+| `Cross-Origin-Opener-Policy` | `same-origin` |
+
+CORS chỉ mở đúng một origin — bằng chứng trực tiếp cho bản sửa `backend/src/app.ts` sáng 08/09.
+
+### Lỗi đỏ trong Console: `@vercel/speed-insights`, không phải mã đồ án
+
+`Uncaught TypeError: Cannot read properties of undefined (reading 'startTime')` tại `et.reportAllChanges (<anonymous>:2:19429)`.
+
+Chuỗi bằng chứng dẫn tới kết luận:
+
+1. Toàn bộ stack là `<anonymous>` / `VM132` — **không một khung nào thuộc `frontend/src`**.
+2. Dòng log ngay trước lỗi là `[Vercel Speed Insights] [vitals]`.
+3. `frontend/package.json` dòng 22–23 khai báo `@vercel/analytics ^2.0.1` và `@vercel/speed-insights ^2.0.0`; `frontend/src/main.tsx` dòng 8–9, 21–22 gắn `<SpeedInsights />` và `<Analytics />` ở **mọi** môi trường.
+4. Mở `VM132` trong tab Sources thấy rõ mã `PerformanceObserver.supportedEntryTypes`, `c("soft-navigation", t.navigationId, t.interactionId, t.name, t.startTime)`, `p = ["event", "first-input"]` — chính xác là phần attribution của thư viện `web-vitals` bên trong Speed Insights.
+5. Sau F5, bộ đếm lỗi **về 0** và chỉ tăng khi có tương tác → lỗi nằm ở đường đo INP, không phải lúc tải trang.
+
+Hệ quả thực dụng: trước hội đồng, mở trang xong **không bấm gì** thì Console hoàn toàn sạch.
+
+Gợi ý sửa của DevTools nhắm vào callback `onINP` / `onEachInteraction` **nằm trong gói đã đóng gói** — không sửa được và không nên sửa ở `frontend/src`.
+
+### Ba quan sát đã ghi — không tính lỗi
+
+| Quan sát | Bản chất | Câu trả lời nếu hội đồng hỏi |
+|---|---|---|
+| Nhấp **biểu tượng** logo không đi đâu, chỉ nhấp **chữ** "LearnQuiz" mới về `/` | `Header.tsx`: `<SchoolIcon />` nằm ngoài `RouterLink`; định tuyến `/` → `HomePage` vẫn đúng | "Vùng nhấp của logo giới hạn ở chữ; định tuyến hoạt động đúng, điều hướng SPA không tải lại trang." |
+| API trả `totalPages: 1` khi `total: 0` | lựa chọn `Math.max(1, …)` phổ biến, tránh chia cho 0 | "Chúng em chuẩn hóa tối thiểu một trang để giao diện phân trang không phải xử lý trường hợp 0 trang." |
+| Mỗi lần tải phát sinh **hai** request giống nhau | `main.tsx` dòng 13 bọc `<React.StrictMode>`, dev cố ý gọi effect hai lần | "Đó là React StrictMode ở chế độ phát triển; bản dựng production chỉ gọi một lần." |
+
+### Chưa kiểm chứng được
+
+Bốn tiêu đề khóa học hiện có đều bắt đầu bằng chữ cái **không dấu** (J, L, P, R) nên `sort=title` chưa phân biệt được backend dùng `ORDER BY title` thuần byte hay có collation tiếng Việt. Nằm ngoài phạm vi P01 — ghi nhận để trả lời trung thực nếu bị hỏi.
+
+### Đề xuất chưa thực hiện — chờ quyết định
+
+Bọc hai thẻ đo lường để chúng chỉ chạy ở production, cho Console sạch tuyệt đối khi trình diễn:
+
+```tsx
+{import.meta.env.PROD && <SpeedInsights />}
+{import.meta.env.PROD && <Analytics />}
+```
+
+**Chưa sửa.** Sát ngày bảo vệ, mọi thay đổi mã nguồn đều phải cân nhắc và được chủ nhiệm đề tài đồng ý trước.
+
+### Còn lại của bộ kiểm tra tay
+
+Tổng kết phiếu: **PASS 4 · FAIL 0 · BLOCKED 0 · NOT RUN 24**.
+
+Đã xong: P01 (hôm nay), S05, S06 (06/09), mục 8 (build và kiểm thử tự động).
+Còn lại: AU01–AU04, I01–I05, S01–S04, A01–A04, mục 5 (Postman), mục 6 (AI Gemini), mục 7 (UI/responsive).
+
+Ca kế tiếp là **AU01 — đăng ký**, sẽ tạo tài khoản mới trong DB cục bộ (được phép, seed lại được bằng `npm run seed`).
+
+### Ghi chú công cụ
+
+`device_bash` (cầu nối Linux) lại chết ngay từ lệnh đầu với "Workspace unavailable" — đúng như bẫy số 4 đã ghi. Cả phiên chạy bằng PowerShell qua Desktop Commander. Thêm một bẫy mới cần nhớ: **`$` trong chuỗi PowerShell lồng bị nuốt**, nên `$$` dollar-quoting của PostgreSQL và biến `$p` đều hỏng — phải viết `` `$ `` hoặc tránh hẳn biến.
+
+## 08/09/2026 (đêm, tiếp) — Hai bản tối ưu nhỏ, và một bản bị hoàn tác vì làm lệch số liệu hồ sơ
+
+Chủ nhiệm đề tài yêu cầu "tối ưu toàn bộ hệ thống và project", và chọn mức **sửa vài việc nhỏ, an toàn**. Đã đề xuất ba việc; **giữ hai, hoàn tác một**.
+
+### Hai bản sửa được giữ — cả hai đều không đổi số dòng
+
+| Tệp | Trước | Sau | Lý do |
+|---|---|---|---|
+| `frontend/src/main.tsx` dòng 21–22 | `<SpeedInsights />` · `<Analytics />` | `{import.meta.env.PROD && <SpeedInsights />}` · `{import.meta.env.PROD && <Analytics />}` | hai gói đo lường của Vercel gây lỗi đỏ `startTime` trong Console khi chạy dev; chặn ở dev cho Console sạch khi trình diễn. **Production không đổi hành vi** vì `PROD` là `true` |
+| `backend/src/services/courseService.ts` dòng 65 · `adminService.ts` dòng 70, 174 | `totalPages: Math.max(1, Math.ceil(total / limit))` | `totalPages: Math.ceil(total / limit)` | khi `total = 0` API từng trả `totalPages: 1` — nay trả `0`, trung thực hơn. Giao diện đã an toàn sẵn: cả ba trang phân trang đều dùng `totalPages > 1 &&` |
+
+Cả hai chỉ thay chữ **bên trong dòng có sẵn** — số dòng của Bảng 1.6 không suy chuyển.
+
+### Bản sửa bị hoàn tác: vùng nhấp của logo
+
+Đã thử bọc `SchoolIcon` và chữ "LearnQuiz" trong một `Box component={RouterLink}` để **cả biểu tượng** cũng nhấp được. Sửa chạy đúng, mọi cổng chất lượng vẫn xanh — nhưng đo lại thì:
+
+| Chỉ số | Hồ sơ đang in | Sau khi sửa logo |
+|---|---|---|
+| Front-end | 6.215 dòng | **6.224** |
+| Tổng TypeScript (slide 15) | 10.522 | **10.531** |
+| Gói lớn nhất | 323,96 kB / gzip 102,85 | 324,08 / gzip 102,90 |
+
+Riêng `Header.tsx` **+9 dòng**. Giữ nó thì phải sửa Bảng 1.6 trong `.docx`, sửa slide 15, rồi xuất lại cả hai PDF — thêm ba chỗ có thể sai sót, chỉ để đổi lấy một cải thiện thuần thẩm mỹ mà **đã có câu trả lời soạn sẵn** cho hội đồng.
+
+Quyết định: **`git checkout -- frontend/src/components/layout/Header.tsx`**. Đo lại xác nhận số liệu về đúng nguyên trạng.
+
+> Bài học ghi lại: sát ngày bảo vệ, **mọi thay đổi thêm/bớt dòng trong `backend/src` hoặc `frontend/src` đều là thay đổi hồ sơ**, không chỉ là thay đổi mã. Chỉ những sửa đổi nằm gọn trong một dòng có sẵn mới thực sự "miễn phí".
+
+### Cổng chất lượng sau khi sửa — đo lại đầy đủ, tất cả xanh
+
+| Cổng | Kết quả |
+|---|---|
+| Backend `tsc` · `eslint` | 0 lỗi |
+| Backend `vitest` | **357 đạt / 0 hỏng**, 12 tệp (1+24+30+31+18+49+76+36+4+16+60+12) |
+| Frontend `tsc` · `eslint` | 0 lỗi |
+| Frontend `vitest` | **13 đạt**, 4 tệp |
+| `vite build` | ✓ 338 ms, gói lớn nhất **323,96 kB** (gzip **102,85 kB**) |
+| Số dòng đo lại | BE **4.307 / 58 tệp** · FE **6.215 / 52 tệp** · tổng **10.522** |
+
+Mọi con số trùng khớp tuyệt đối với bản đã in trong hồ sơ. **Không phải sửa `.docx`, không phải sửa slide.**
+
+### Cách đếm dòng khi không có `wc`
+
+WSL trên máy này đang hỏng (`Failed to attach disk … ext4.vhdx`) nên không có `wc`, và đó cũng là lý do `device_bash` chết. Bản thay thế đếm đúng như `wc -l` (đếm ký tự `\n`, không phải số phần tử):
+
+```powershell
+[regex]::Matches([System.IO.File]::ReadAllText($f), "`n").Count
+```
+
+Phải đưa vào một tệp `.ps1` rồi chạy bằng `-File`, vì viết thẳng trong `powershell -Command "…"` lồng thì biến `$f`, `$n`, `$_` đều bị shell ngoài nuốt.

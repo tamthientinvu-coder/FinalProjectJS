@@ -18,8 +18,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           <RouterProvider router={router} />
         </Suspense>
       </AuthProvider>
-      <SpeedInsights />
-      <Analytics />
+      {import.meta.env.PROD && <SpeedInsights />}
+      {import.meta.env.PROD && <Analytics />}
     </ThemeProvider>
   </React.StrictMode>
 );

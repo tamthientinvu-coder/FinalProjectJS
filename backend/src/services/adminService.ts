@@ -67,7 +67,7 @@ export async function listCourses(filter: AdminCourseFilter) {
 
   return {
     items,
-    meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }
 
@@ -171,7 +171,7 @@ export async function listUsers(filter: UserFilter) {
 
   return {
     items,
-    meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }
 

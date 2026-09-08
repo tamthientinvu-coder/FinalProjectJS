@@ -62,7 +62,7 @@ export async function listPublished(filter: CourseFilter) {
 
   return {
     items,
-    meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }
 
