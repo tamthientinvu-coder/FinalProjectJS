@@ -25,6 +25,10 @@ async function main() {
   await prisma.quiz.deleteMany();
   await prisma.lesson.deleteMany();
   await prisma.course.deleteMany();
+  // Xóa luôn danh mục: category chỉ được course tham chiếu, mà course vừa bị xóa ở trên.
+  // Nếu bỏ bước này, mọi danh mục từng tạo bằng tay sẽ nằm lại vĩnh viễn và hiện ra
+  // như một mục rỗng trong bộ lọc của trang công khai.
+  await prisma.category.deleteMany();
 
   // ---------- 2) Tài khoản ----------
   const hashed = await bcrypt.hash(PASSWORD, 10);
@@ -89,7 +93,7 @@ async function main() {
 
   const categories: Record<string, number> = {};
   for (const c of categoryData) {
-    const saved = await prisma.category.upsert({ where: { slug: c.slug }, update: {}, create: c });
+    const saved = await prisma.category.upsert({ where: { slug: c.slug }, update: { name: c.name }, create: c });
     categories[c.slug] = saved.id;
   }
 

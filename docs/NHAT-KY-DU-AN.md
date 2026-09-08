@@ -787,3 +787,33 @@ Chưa xử lý — xóa dữ liệu cần chủ nhiệm đề tài đồng ý. H
 - `docs/BAO-CAO-DO-AN-LearnQuiz.docx` — Bảng C.1 thêm ba giảng viên; chú thích `seed.ts` trong cây thư mục; đoạn mô tả dữ liệu mẫu ở phụ lục.
 - `docs/HUONG-DAN-KIEM-TRA-TAY.md` — bảng tài khoản mục 0.5 thêm GV3/GV4/GV5; thêm ghi chú về bộ dữ liệu mới và khóa nào dùng cho ca A01, I03.
 - Hai bản `.pdf` vẫn giữ nguyên theo quyết định trước. Lần này bảng tài khoản **thay đổi số dòng**, không phải chỉ đổi chữ số, nên **không vá PDF theo cách cũ được** — muốn khớp phải xuất lại từ Word.
+
+## 08/09/2026 (tối) — Dọn danh mục rác trong seed và gọn cây tệp docs/ trên GitHub
+
+### 1. Seed nay dọn cả `categories`
+
+Bước dọn dữ liệu cũ trước đây chạy từ `answers` xuống `courses` nhưng **bỏ sót `categories`**, mà danh mục lại dùng `upsert`. Hệ quả: mọi danh mục từng tạo bằng tay đều nằm lại vĩnh viễn. Cơ sở dữ liệu cục bộ vì thế có `Trí tuệ nhân tạo` với **0 khóa học**, và nó hiện ra trong bộ lọc "Danh mục" của trang công khai như một mục chọn vào thì không ra gì.
+
+Đã thêm `await prisma.category.deleteMany();` ngay sau `course.deleteMany()`. Thứ tự này an toàn: `category` chỉ được `course` tham chiếu, mà `course` vừa bị xóa ở dòng trên. Đồng thời đổi `update: {}` thành `update: { name: c.name }` để đổi tên danh mục trong seed thì lần chạy sau cập nhật theo.
+
+Chạy lại: còn đúng **6 danh mục**, mỗi mục đều có khóa học, không còn mục rỗng.
+
+### 2. Gỡ bảy hồ sơ review cũ khỏi GitHub
+
+`docs/` có 18 tệp, quá nửa là review và kế hoạch của các đợt trước. Đã gỡ khỏi chỉ mục bằng `git rm --cached` và thêm vào `.gitignore` — **tệp vẫn nằm nguyên trên máy**, và lịch sử commit vẫn truy được, nên dấu vết kiểm chứng không mất.
+
+| Tệp gỡ khỏi GitHub | Dung lượng |
+|---|---|
+| `BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md` | 10 KB |
+| `HUONG-DAN-HOAN-THIEN-BAO-CAO.md` | 4 KB |
+| `HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md` | 33 KB |
+| `HUONG-DAN-SUA-CHUA-TIEN-BAO-VE.md` | 42 KB |
+| `KE-HOACH-REVIEW-TOT-NGHIEP-2026-09-02.md` | 28 KB |
+| `LUA-CHON-HA-TANG-VERCEL-VS-RENDER.md` | 8 KB |
+| `REVIEW-TOT-NGHIEP-2026-09-01.md` | 20 KB |
+
+Trước khi gỡ đã rà liên kết chéo: bảy tệp này **chỉ được nhật ký nhắc tên** (chuyện bình thường của một cuốn biên niên). Riêng `MAU-KET-QUA-KIEM-TRA.md` được `README.md` và `HUONG-DAN-KIEM-TRA-TAY.md` trỏ tới nên **giữ lại**, dù thoạt nhìn cũng giống một tệp phụ trợ.
+
+`docs/` trên GitHub nay còn 11 tệp: báo cáo và slide bản PDF/PPTX, đề án, tài liệu ôn, hướng dẫn kiểm tra tay hiện hành, mẫu kết quả, hướng dẫn triển khai, nhật ký và `hinh-ve.zip`.
+
+Việc này **không đụng phép đếm 164 tệp** — bộ lọc của Bảng 1.6 vốn đã trừ toàn bộ `docs/`.

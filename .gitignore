@@ -30,3 +30,13 @@ artifacts/
 
 # Ban nguon Word cua bao cao va huong dan - giu tren may, khong dua len GitHub
 docs/*.docx
+
+# Ho so review va ke hoach cu - giu tren may lam dau vet kiem chung,
+# khong hien tren GitHub de cay tep docs/ gon lai
+docs/BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md
+docs/HUONG-DAN-HOAN-THIEN-BAO-CAO.md
+docs/HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md
+docs/HUONG-DAN-SUA-CHUA-TIEN-BAO-VE.md
+docs/KE-HOACH-REVIEW-TOT-NGHIEP-2026-09-02.md
+docs/LUA-CHON-HA-TANG-VERCEL-VS-RENDER.md
+docs/REVIEW-TOT-NGHIEP-2026-09-01.md
