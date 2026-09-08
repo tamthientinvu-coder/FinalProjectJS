@@ -854,3 +854,46 @@ Không tin vào việc "đã ghi vào tệp" — đã kiểm chứng bằng ba p
 | `git add -A` rồi soi chỉ mục | không một tệp bị chặn nào lọt vào |
 
 `docs/` trong chỉ mục vẫn đúng 7 tệp; trên đĩa vẫn đủ 20.
+
+## 08/09/2026 (khuya) — Bảo vệ tệp đề bài gốc, và sửa một con số đếm sai
+
+### Đề bài gốc phải luôn ở trên GitHub
+
+`ĐỀ TÀI 4 — Nền Tảng Học Tập & Quiz Trực Tuyến.docx` (2,56 MB, nằm ở **gốc kho**, không phải trong `docs/`) là bằng chứng phạm vi đề tài và **phải luôn có trên GitHub**.
+
+Kiểm tra cho thấy nó vẫn đang được theo dõi bình thường. Đã thêm một dòng phủ định vào `.gitignore` để bảo vệ nó ngay cả khi ai đó về sau thêm một quy tắc rộng như `*.docx`:
+
+```
+!/ĐỀ TÀI 4 — Nền Tảng Học Tập & Quiz Trực Tuyến.docx
+```
+
+Kiểm chứng bằng phép thử khắc nghiệt: tạm thêm `*.docx` toàn cục vào `.gitignore` rồi chạy `git check-ignore` — đề bài **thoát**, còn `docs/BAO-CAO-DO-AN-LearnQuiz.docx` vẫn bị chặn đúng. Sau đó khôi phục nguyên trạng.
+
+⚠️ Quy tắc loại trừ `.docx` **phải luôn giới hạn trong `docs/`**, không được viết thành `*.docx` ở mức gốc.
+
+### Con số 164 sai — đúng phải là 163
+
+Truy ra một lỗi đếm có từ trước. Tên tệp đề bài có dấu tiếng Việt, mà Git bật `core.quotepath` theo mặc định nên in nó ra dạng escape kèm dấu ngoặc kép:
+
+```
+"\304\220\341\273\200 T\303\200I 4 \342\200\224 ... Tuy\341\272\277n.docx"
+```
+
+Chuỗi này kết thúc bằng `docx"` chứ không phải `.docx`, nên bộ lọc *"trừ `.docx`"* của Bảng 1.6 **không khớp** và tệp không bị trừ — đếm thừa đúng 1.
+
+| Commit | Đếm kiểu escape (sai) | Đếm tên thật (đúng) |
+|---|---|---|
+| `5f5888d` | 162 | **161** |
+| `HEAD` | 164 | **163** |
+
+Vậy con số **162 in trong hồ sơ đã sai sẵn từ trước**, và bản sửa ngày 08/09 kế thừa lỗi đó thành 164. Nay sửa Bảng 1.6 thành **163 tệp**.
+
+**Từ nay mọi phép đếm bằng `git ls-files` phải chạy với `git -c core.quotepath=false`**, nếu không tệp có tên dấu tiếng Việt sẽ lọt qua mọi bộ lọc.
+
+Đây là lỗi cùng họ với lỗi `Measure-Object -Line` sáng nay: tin vào một lệnh đếm mà không kiểm chứng nó thực sự đọc ra cái gì.
+
+### Trạng thái hai tệp hồ sơ
+
+`.docx` đã sửa thành 163. **Bản `.pdf` chủ nhiệm đề tài vừa xuất vẫn ghi 164** nên cần xuất lại một lần nữa — bản đó ngoài ra đã rất chuẩn: 72 trang, Producer là Word, và `pdftotext` xác nhận có đủ 4.307 · 6.215 · 2.135 · 357 (16 chỗ) · `instructor5` · Đặng Quốc Bảo.
+
+Không vá thẳng PDF lần này: khác với ngày 05/09, chữ số trong Bảng 1.6 lần này được Word mã hóa thành glyph hex (`<0030006D>…`) chứ không phải ký tự ASCII, nên vá đòi giải mã bảng font — rủi ro không đáng trên tệp 72 trang.

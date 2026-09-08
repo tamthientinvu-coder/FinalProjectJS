@@ -38,6 +38,13 @@ artifacts/
 # Muon dua mot tep tro lai GitHub: xoa dong tuong ung o duoi, roi chay
 #   git add -f docs/<ten tep>
 
+# --- BAT BUOC GIU TREN GITHUB - KHONG BAO GIO LOAI TRU ---
+# De bai goc cua do an, la bang chung pham vi de tai. Dong phu dinh duoi day
+# bao ve no ngay ca khi ai do them mot quy tac rong nhu *.docx ve sau.
+# CHU Y: quy tac loai tru .docx phai luon gioi han trong docs/, khong duoc
+# viet thanh *.docx o muc goc.
+!/ĐỀ TÀI 4 — Nền Tảng Học Tập & Quiz Trực Tuyến.docx
+
 # --- Ban nguon Word va PowerPoint cua ho so nop ---
 docs/*.docx
 docs/*.pptx
