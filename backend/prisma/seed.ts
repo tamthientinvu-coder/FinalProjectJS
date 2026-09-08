@@ -47,6 +47,24 @@ async function main() {
     create: { name: "Lê Thu Hà", email: "instructor2@learnquiz.vn", password: hashed, role: Role.instructor },
   });
 
+  const instructor3 = await prisma.user.upsert({
+    where: { email: "instructor3@learnquiz.vn" },
+    update: {},
+    create: { name: "Nguyễn Hoàng Phúc", email: "instructor3@learnquiz.vn", password: hashed, role: Role.instructor },
+  });
+
+  const instructor4 = await prisma.user.upsert({
+    where: { email: "instructor4@learnquiz.vn" },
+    update: {},
+    create: { name: "Phạm Cẩm Tú", email: "instructor4@learnquiz.vn", password: hashed, role: Role.instructor },
+  });
+
+  const instructor5 = await prisma.user.upsert({
+    where: { email: "instructor5@learnquiz.vn" },
+    update: {},
+    create: { name: "Đặng Quốc Bảo", email: "instructor5@learnquiz.vn", password: hashed, role: Role.instructor },
+  });
+
   const student = await prisma.user.upsert({
     where: { email: "student@learnquiz.vn" },
     update: {},
@@ -65,6 +83,8 @@ async function main() {
     { name: "Ngôn ngữ lập trình", slug: "ngon-ngu-lap-trinh" },
     { name: "Cơ sở dữ liệu", slug: "co-so-du-lieu" },
     { name: "DevOps & Công cụ", slug: "devops-cong-cu" },
+    { name: "Dữ liệu & AI", slug: "du-lieu-va-ai" },
+    { name: "Thiết kế & Đồ họa", slug: "thiet-ke-do-hoa" },
   ];
 
   const categories: Record<string, number> = {};
@@ -322,6 +342,310 @@ async function main() {
     },
   });
 
+  // === Khóa 4: Python căn bản (published) ===
+  await prisma.course.create({
+    data: {
+      instructorId: instructor3.id,
+      categoryId: categories["ngon-ngu-lap-trinh"],
+      title: "Lập trình Python cho người mới bắt đầu",
+      description:
+        "Nhập môn Python: cú pháp, kiểu dữ liệu, cấu trúc điều khiển, hàm và các kiểu dữ liệu tập hợp. Học xong bạn tự viết được script xử lý tệp và dữ liệu hằng ngày.",
+      thumbnail: "https://placehold.co/600x400/3776ab/fff?text=Python",
+      level: CourseLevel.beginner,
+      status: CourseStatus.published,
+      publishedAt: new Date(),
+      lessons: {
+        create: [
+          {
+            order: 1,
+            title: "Cú pháp, biến và kiểu dữ liệu",
+            content:
+              "Python dùng thụt lề để phân khối lệnh thay cho dấu ngoặc nhọn, nên sai thụt lề là lỗi cú pháp chứ không chỉ là xấu mã. Biến không cần khai báo kiểu; kiểu được suy ra khi gán và có thể đổi về sau. Bốn kiểu số và chuỗi hay dùng: int (số nguyên không giới hạn độ lớn), float (số thực dấu phẩy động), bool (True/False), str (chuỗi Unicode, bất biến). Vì chuỗi bất biến nên mọi thao tác như .upper() hay .replace() đều trả về chuỗi mới chứ không sửa chuỗi gốc. Dùng f-string để ghép chuỗi cho dễ đọc: f\"Xin chào {ten}\".",
+          },
+          {
+            order: 2,
+            title: "List, tuple, dict và set",
+            content:
+              "List là dãy có thứ tự và sửa được, viết trong ngoặc vuông. Tuple giống list nhưng bất biến, viết trong ngoặc tròn, nên dùng được làm khóa của dict. Dict lưu cặp khóa–giá trị, tra cứu theo khóa gần như tức thời. Set là tập hợp không trùng lặp và không có thứ tự, rất hợp để lọc trùng hoặc kiểm tra một phần tử có nằm trong tập không. Chọn đúng kiểu dữ liệu quan trọng hơn tối ưu vòng lặp: kiểm tra phần tử trong list phải duyệt tuần tự, còn trong set hay dict thì tra thẳng qua bảng băm.",
+            quiz: {
+              create: {
+                title: "Kiểm tra: Kiểu dữ liệu trong Python",
+                passScore: 70,
+                maxAttempts: 3,
+                questions: {
+                  create: [
+                    {
+                      order: 1,
+                      text: "Kiểu dữ liệu nào sau đây KHÔNG cho phép thay đổi nội dung sau khi tạo?",
+                      choices: {
+                        create: [
+                          { text: "list", isCorrect: false },
+                          { text: "tuple", isCorrect: true },
+                          { text: "dict", isCorrect: false },
+                          { text: "set", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 2,
+                      text: "Cấu trúc nào phù hợp nhất để loại bỏ các giá trị trùng lặp?",
+                      choices: {
+                        create: [
+                          { text: "set", isCorrect: true },
+                          { text: "list", isCorrect: false },
+                          { text: "tuple", isCorrect: false },
+                          { text: "str", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 3,
+                      text: "Python phân biệt khối lệnh bằng cách nào?",
+                      choices: {
+                        create: [
+                          { text: "Bằng thụt lề", isCorrect: true },
+                          { text: "Bằng cặp ngoặc nhọn", isCorrect: false },
+                          { text: "Bằng dấu chấm phẩy cuối dòng", isCorrect: false },
+                          { text: "Bằng từ khóa begin và end", isCorrect: false },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // === Khóa 5: Phân tích dữ liệu (published) ===
+  await prisma.course.create({
+    data: {
+      instructorId: instructor4.id,
+      categoryId: categories["du-lieu-va-ai"],
+      title: "Phân tích dữ liệu với Excel và Power BI",
+      description:
+        "Làm sạch dữ liệu, dựng bảng tổng hợp và kể chuyện bằng biểu đồ. Đi từ hàm Excel nền tảng đến mô hình dữ liệu và báo cáo tương tác trên Power BI.",
+      thumbnail: "https://placehold.co/600x400/217346/fff?text=Data+Analysis",
+      level: CourseLevel.beginner,
+      status: CourseStatus.published,
+      publishedAt: new Date(),
+      lessons: {
+        create: [
+          {
+            order: 1,
+            title: "Làm sạch dữ liệu trước khi phân tích",
+            content:
+              "Phần lớn thời gian của một dự án phân tích nằm ở khâu làm sạch chứ không phải vẽ biểu đồ. Bốn lỗi hay gặp: ô trống bị hiểu nhầm là số 0, ngày tháng lưu dưới dạng chuỗi nên không sắp xếp đúng, khoảng trắng thừa ở đầu và cuối làm hai giá trị giống nhau bị đếm thành hai nhóm, và dòng trùng lặp do gộp nhiều nguồn. Nguyên tắc quan trọng: luôn giữ lại bản dữ liệu thô, mọi bước làm sạch phải ghi lại được để người khác lặp lại và kiểm chứng kết quả.",
+          },
+          {
+            order: 2,
+            title: "Bảng tổng hợp và biểu đồ biết kể chuyện",
+            content:
+              "Bảng tổng hợp trả lời nhanh câu hỏi tổng, trung bình và đếm theo từng nhóm mà không cần viết công thức. Khi chọn biểu đồ, hãy bám vào câu hỏi: so sánh giữa các nhóm thì dùng cột, diễn biến theo thời gian thì dùng đường, quan hệ giữa hai đại lượng thì dùng biểu đồ phân tán. Tránh biểu đồ tròn khi có quá nhiều phần, vì mắt người rất kém trong việc so sánh diện tích các hình quạt gần bằng nhau.",
+            quiz: {
+              create: {
+                title: "Kiểm tra: Nền tảng phân tích dữ liệu",
+                passScore: 70,
+                maxAttempts: 3,
+                questions: {
+                  create: [
+                    {
+                      order: 1,
+                      text: "Loại biểu đồ nào phù hợp nhất để thể hiện diễn biến doanh thu qua 12 tháng?",
+                      choices: {
+                        create: [
+                          { text: "Biểu đồ đường", isCorrect: true },
+                          { text: "Biểu đồ tròn", isCorrect: false },
+                          { text: "Biểu đồ phân tán", isCorrect: false },
+                          { text: "Biểu đồ radar", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 2,
+                      text: "Vì sao phải luôn giữ lại bản dữ liệu thô?",
+                      choices: {
+                        create: [
+                          { text: "Để người khác lặp lại và kiểm chứng được kết quả", isCorrect: true },
+                          { text: "Để tệp báo cáo có dung lượng lớn hơn", isCorrect: false },
+                          { text: "Vì Power BI bắt buộc phải có", isCorrect: false },
+                          { text: "Để biểu đồ hiển thị nhanh hơn", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 3,
+                      text: "Khoảng trắng thừa ở đầu và cuối giá trị gây ra hậu quả gì khi nhóm dữ liệu?",
+                      choices: {
+                        create: [
+                          { text: "Hai giá trị giống nhau bị đếm thành hai nhóm khác nhau", isCorrect: true },
+                          { text: "Tệp bị hỏng không mở được", isCorrect: false },
+                          { text: "Ngày tháng tự động đổi sang định dạng khác", isCorrect: false },
+                          { text: "Không ảnh hưởng gì cả", isCorrect: false },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // === Khóa 6: Figma (pending - chờ duyệt) ===
+  await prisma.course.create({
+    data: {
+      instructorId: instructor5.id,
+      categoryId: categories["thiet-ke-do-hoa"],
+      title: "Thiết kế giao diện web với Figma",
+      description:
+        "Dựng giao diện từ khung xương đến bản mẫu bấm được: lưới bố cục, hệ thống màu và chữ, component tái sử dụng và bàn giao cho lập trình viên. Khóa học đang chờ quản trị viên duyệt.",
+      thumbnail: "https://placehold.co/600x400/a259ff/fff?text=Figma",
+      level: CourseLevel.intermediate,
+      status: CourseStatus.pending,
+      lessons: {
+        create: [
+          {
+            order: 1,
+            title: "Lưới bố cục và hệ thống khoảng cách",
+            content:
+              "Giao diện trông chuyên nghiệp hay không phần lớn do khoảng cách chứ không do màu sắc. Hãy chọn một đơn vị cơ sở, thường là 8 điểm ảnh, rồi mọi khoảng cách và kích thước đều là bội số của nó. Cách này giúp các màn hình khác nhau vẫn nhất quán mà không cần đo lại từng chỗ. Lưới 12 cột chia hết cho 2, 3, 4 và 6 nên bố trí được nhiều kiểu chia khối mà vẫn thẳng hàng.",
+          },
+          {
+            order: 2,
+            title: "Component và biến thể",
+            content:
+              "Component là một khối giao diện được định nghĩa một lần rồi dùng lại nhiều nơi; sửa ở bản gốc thì mọi bản sao đổi theo. Biến thể gom các trạng thái của cùng một thành phần vào một chỗ, ví dụ nút bấm có trạng thái thường, di chuột lên, đang bấm và bị vô hiệu hóa. Đặt tên component theo vai trò chứ không theo hình thức: đặt là Nút chính thay vì Nút xanh, vì màu có thể đổi còn vai trò thì không.",
+            quiz: {
+              create: {
+                title: "Kiểm tra: Nguyên tắc thiết kế giao diện",
+                passScore: 70,
+                maxAttempts: 3,
+                questions: {
+                  create: [
+                    {
+                      order: 1,
+                      text: "Vì sao nên đặt tên component theo vai trò thay vì theo màu sắc?",
+                      choices: {
+                        create: [
+                          { text: "Vì màu có thể thay đổi nhưng vai trò thì không", isCorrect: true },
+                          { text: "Vì tên theo màu làm tệp nặng hơn", isCorrect: false },
+                          { text: "Vì Figma không cho đặt tên có màu", isCorrect: false },
+                          { text: "Vì tên theo vai trò ngắn hơn", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 2,
+                      text: "Lợi ích chính của việc lấy 8 điểm ảnh làm đơn vị khoảng cách cơ sở là gì?",
+                      choices: {
+                        create: [
+                          { text: "Giữ khoảng cách nhất quán trên mọi màn hình", isCorrect: true },
+                          { text: "Giúp trang tải nhanh hơn", isCorrect: false },
+                          { text: "Bắt buộc theo chuẩn WCAG", isCorrect: false },
+                          { text: "Giảm dung lượng ảnh xuất ra", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 3,
+                      text: "Khi sửa component gốc thì các bản sao đang dùng sẽ ra sao?",
+                      choices: {
+                        create: [
+                          { text: "Tự động cập nhật theo bản gốc", isCorrect: true },
+                          { text: "Giữ nguyên như cũ", isCorrect: false },
+                          { text: "Bị xóa khỏi trang", isCorrect: false },
+                          { text: "Chuyển thành ảnh tĩnh", isCorrect: false },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  // === Khóa 7: Selenium (draft - bản nháp của giảng viên) ===
+  await prisma.course.create({
+    data: {
+      instructorId: instructor5.id,
+      categoryId: categories["devops-cong-cu"],
+      title: "Kiểm thử tự động với Selenium",
+      description:
+        "Viết kịch bản kiểm thử giao diện chạy được trên nhiều trình duyệt, xử lý chờ bất đồng bộ và tổ chức mã theo mô hình Page Object. Khóa học còn là bản nháp, chưa gửi duyệt.",
+      thumbnail: "https://placehold.co/600x400/43b02a/fff?text=Selenium",
+      level: CourseLevel.intermediate,
+      status: CourseStatus.draft,
+      lessons: {
+        create: [
+          {
+            order: 1,
+            title: "Định vị phần tử và chờ đúng cách",
+            content:
+              "Nguyên nhân số một khiến kiểm thử giao diện chập chờn là chờ sai cách. Chờ cứng bằng cách ngủ vài giây vừa làm bộ kiểm thử chậm vừa vẫn hỏng khi mạng chậm hơn thường lệ. Hãy dùng chờ tường minh: nêu rõ điều kiện cần đợi, ví dụ phần tử hiện ra hoặc bấm được, kèm thời hạn tối đa. Về cách định vị, ưu tiên thuộc tính dành riêng cho kiểm thử hoặc vai trò khả truy cập; tránh bám vào đường dẫn XPath dài vì chỉ cần đổi một thẻ bọc ngoài là hỏng.",
+            quiz: {
+              create: {
+                title: "Kiểm tra: Nguyên tắc kiểm thử tự động",
+                passScore: 70,
+                maxAttempts: 3,
+                questions: {
+                  create: [
+                    {
+                      order: 1,
+                      text: "Vì sao không nên dùng lệnh chờ cứng trong kịch bản kiểm thử?",
+                      choices: {
+                        create: [
+                          { text: "Vừa làm chậm bộ kiểm thử vừa vẫn hỏng khi mạng chậm", isCorrect: true },
+                          { text: "Vì Selenium không hỗ trợ lệnh chờ", isCorrect: false },
+                          { text: "Vì nó chỉ chạy được trên Chrome", isCorrect: false },
+                          { text: "Vì nó làm tăng dung lượng báo cáo", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 2,
+                      text: "Cách định vị phần tử nào bền vững nhất trước thay đổi giao diện?",
+                      choices: {
+                        create: [
+                          { text: "Thuộc tính dành riêng cho kiểm thử", isCorrect: true },
+                          { text: "Đường dẫn XPath tuyệt đối", isCorrect: false },
+                          { text: "Thứ tự phần tử trên trang", isCorrect: false },
+                          { text: "Tọa độ điểm ảnh", isCorrect: false },
+                        ],
+                      },
+                    },
+                    {
+                      order: 3,
+                      text: "Mô hình Page Object giải quyết vấn đề gì?",
+                      choices: {
+                        create: [
+                          { text: "Gom cách định vị vào một nơi để sửa giao diện chỉ phải sửa một chỗ", isCorrect: true },
+                          { text: "Tăng tốc độ chạy trình duyệt", isCorrect: false },
+                          { text: "Tự động sinh dữ liệu kiểm thử", isCorrect: false },
+                          { text: "Thay thế hoàn toàn kiểm thử đơn vị", isCorrect: false },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+
   // ---------- 5) Enrollment + tiến độ mẫu cho học viên ----------
   const enrollment = await prisma.enrollment.create({
     data: { studentId: student.id, courseId: jsCourse.id },
@@ -347,6 +671,9 @@ async function main() {
   console.log("  admin       : admin@learnquiz.vn");
   console.log("  instructor  : instructor@learnquiz.vn");
   console.log("  instructor 2: instructor2@learnquiz.vn");
+  console.log("  instructor 3: instructor3@learnquiz.vn");
+  console.log("  instructor 4: instructor4@learnquiz.vn");
+  console.log("  instructor 5: instructor5@learnquiz.vn");
   console.log("  student     : student@learnquiz.vn");
   console.log("  student 2   : student2@learnquiz.vn");
   console.log("--------------------------------------------------");

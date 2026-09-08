@@ -746,3 +746,44 @@ Không đổi: 46 điểm cuối · 11 bảng · 3 kiểu liệt kê · 217 dòn
 ### Không đưa bản nguồn Word lên GitHub
 
 Thêm `docs/*.docx` vào `.gitignore` và gỡ khỏi chỉ mục bằng `git rm --cached`. Tệp vẫn nằm trên máy. Phép đếm 164 không đổi vì bộ lọc của Bảng 1.6 vốn đã trừ `docs/`, `*.md`, `package-lock.json` và `.docx`.
+
+## 08/09/2026 (chiều) — Mở rộng dữ liệu mẫu: 7 khóa học, 5 giảng viên
+
+Yêu cầu: thêm 4 khóa học, tham khảo lĩnh vực đào tạo của Trung tâm Tin học ĐH KHTN (csc.edu.vn), làm tên giảng viên phong phú hơn. Tên khóa và toàn bộ nội dung bài học đều tự viết, chỉ lấy **lĩnh vực** làm gợi ý.
+
+### Vì sao việc này không phá số liệu vừa đồng bộ
+
+`backend/prisma/seed.ts` nằm **ngoài** `backend/src`, nên 4.307 dòng của Bảng 1.6 không đổi. Tệp đã tồn tại từ trước nên tổng 164 tệp cũng không đổi. Không đụng `backend/tests` nên 2.135 dòng / 19 tệp và 357 phép khẳng định giữ nguyên. **Không con số nào trong `.docx` hay `.pptx` phải sửa lại vì việc này.**
+
+### Đã thêm
+
+| Khóa | Danh mục | Trạng thái | Giảng viên |
+|---|---|---|---|
+| Lập trình Python cho người mới bắt đầu | Ngôn ngữ lập trình | published | Nguyễn Hoàng Phúc |
+| Phân tích dữ liệu với Excel và Power BI | Dữ liệu & AI *(mới)* | published | Phạm Cẩm Tú |
+| Thiết kế giao diện web với Figma | Thiết kế & Đồ họa *(mới)* | pending | Đặng Quốc Bảo |
+| Kiểm thử tự động với Selenium | DevOps & Công cụ | draft | Đặng Quốc Bảo |
+
+Ba tài khoản giảng viên mới: `instructor3/4/5@learnquiz.vn`. Hai danh mục mới. Mỗi khóa mới có 1–2 bài học nội dung thật và một quiz 3 câu đúng luật ra đề (đúng 4 đáp án, đúng 1 đáp án đúng).
+
+Giữ nguyên chủ sở hữu của ba khóa cũ để không phá các ca kiểm tra đã đạt.
+
+Dữ liệu mẫu nay: **8 tài khoản · 6 danh mục · 7 khóa học · 13 bài học · 8 quiz · 21 câu hỏi · 84 đáp án**. Trạng thái: 4 published · 2 pending · 1 draft — đủ trình diễn trọn máy trạng thái duyệt nội dung.
+
+### Cổng chất lượng sau khi seed lại
+
+Backend `tsc`/`eslint` sạch · `npm test` **357/357** · frontend `tsc`/`eslint` sạch · vitest **13/13** · Playwright **6/6**. Dữ liệu mẫu mới **không** làm hỏng ca E2E nào.
+
+### Một phát hiện: cơ sở dữ liệu cục bộ có danh mục rác
+
+Truy vấn sau khi seed cho **7** danh mục trong khi `seed.ts` chỉ định nghĩa 6. Dư ra `Trí tuệ nhân tạo` (`tri-tue-nhan-tao`, id 5, **0 khóa học**) — vết còn lại của một lần thử nghiệm trước.
+
+Nguyên nhân gốc: bước dọn dữ liệu của seed **không xóa `categories`** (chỉ xóa từ `answers` xuống `courses`), còn `category` thì dùng `upsert`. Nên mọi danh mục từng được tạo bằng tay đều nằm lại vĩnh viễn và **hiện trong bộ lọc "Danh mục" của trang công khai như một mục rỗng**.
+
+Chưa xử lý — xóa dữ liệu cần chủ nhiệm đề tài đồng ý. Hai hướng: xóa thẳng danh mục rỗng đó khỏi cơ sở dữ liệu cục bộ (nhanh, không đụng mã nguồn), hoặc thêm bước dọn `categories` vào seed (sạch hơn về lâu dài nhưng đụng `seed.ts` và phải cân nhắc ràng buộc khóa ngoại). Ghi lại để quyết sau.
+
+### Tài liệu đã cập nhật theo
+
+- `docs/BAO-CAO-DO-AN-LearnQuiz.docx` — Bảng C.1 thêm ba giảng viên; chú thích `seed.ts` trong cây thư mục; đoạn mô tả dữ liệu mẫu ở phụ lục.
+- `docs/HUONG-DAN-KIEM-TRA-TAY.md` — bảng tài khoản mục 0.5 thêm GV3/GV4/GV5; thêm ghi chú về bộ dữ liệu mới và khóa nào dùng cho ca A01, I03.
+- Hai bản `.pdf` vẫn giữ nguyên theo quyết định trước. Lần này bảng tài khoản **thay đổi số dòng**, không phải chỉ đổi chữ số, nên **không vá PDF theo cách cũ được** — muốn khớp phải xuất lại từ Word.

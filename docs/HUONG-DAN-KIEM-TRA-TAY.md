@@ -90,9 +90,13 @@ Sau khi seed DB thử, mật khẩu chung là `123456`:
 | QT | admin@learnquiz.vn | Admin |
 | GV | instructor@learnquiz.vn | Instructor |
 | GV2 | instructor2@learnquiz.vn | Instructor khác |
+| GV3 | instructor3@learnquiz.vn | Instructor — Nguyễn Hoàng Phúc |
+| GV4 | instructor4@learnquiz.vn | Instructor — Phạm Cẩm Tú |
+| GV5 | instructor5@learnquiz.vn | Instructor — Đặng Quốc Bảo |
 | HV | student@learnquiz.vn | Student |
 | HV2 | student2@learnquiz.vn | Student khác |
 
+- Sau lần seed ngày 08/09, dữ liệu mẫu gồm **7 khóa học** của **5 giảng viên**: bốn khóa `published` (JavaScript, ReactJS, Python, Phân tích dữ liệu), hai khóa `pending` (PostgreSQL và Prisma, Figma) và một khóa `draft` (Selenium). Dùng hai khóa `pending` cho ca **A01** và khóa `draft` cho ca **I03**.
 - Seed có thể chạy nhiều lần mà sequence không trở về 1. **Không đoán ID**.
 - ID khóa lấy từ URL `/courses/<courseId>`; ID bài từ URL editor/Network; ID quiz từ response GET quiz; ID bài nộp từ `/quiz-result/<submissionId>`.
 - Route UI `/quiz/:lessonId` nhận **ID bài học**, API nộp `/quiz/:quizId/submit` nhận **ID quiz**.
