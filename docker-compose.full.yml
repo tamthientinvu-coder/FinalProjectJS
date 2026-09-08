@@ -43,6 +43,20 @@ services:
     # Áp migration trước khi khởi động API, nếu không API sẽ chạy trên CSDL rỗng
     command: sh -c "npx prisma migrate deploy && node dist/index.js"
 
+  # Công cụ seed riêng: image runtime không có ts-node (devDependency).
+  # Chỉ chạy thủ công trên DB demo được phép xóa dữ liệu.
+  seed:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      target: builder
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/learnquiz_db?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    command: npm run seed
+
   frontend:
     build:
       context: ./frontend

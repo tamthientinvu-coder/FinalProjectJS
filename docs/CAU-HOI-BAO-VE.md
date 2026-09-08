@@ -216,7 +216,7 @@ Trả lời trung thực: **em chưa đo tải**, nên không có con số. Đi�
 
 ---
 
-## Phần C — Bảy điểm yếu nên tự nhận trước khi bị hỏi
+## Phần C — Sáu điểm yếu nên tự nhận trước khi bị hỏi
 
 Chủ động nêu những điều này ở cuối phần trình bày sẽ mạnh hơn nhiều so với bị hỏi rồi mới nhận.
 
@@ -227,26 +227,36 @@ Chủ động nêu những điều này ở cuối phần trình bày sẽ mạn
 | 3 | Access token không thu hồi được ngay | Stateless; cần blacklist Redis mới thu hồi tức thì; hạn 15 phút là biện pháp giảm nhẹ |
 | 4 | 7 khóa ngoại chưa có chỉ mục | Có phân tích đầy đủ ở đề án 4.3; hoãn có chủ đích, chờ số đo `EXPLAIN ANALYZE` |
 | 5 | Chưa đo tải | Không có số thì không nói; đã nêu rõ giới hạn gói miễn phí |
-| 6 | Danh sách trắng CORS còn hai địa chỉ `localhost` ở môi trường thật | Rủi ro thấp; đúng ra nên lọc theo `NODE_ENV`; hoãn vì đóng băng mã nguồn |
-| 7 | Phụ thuộc còn cách bản mới nhất vài phiên bản chính | Đã **đóng băng có chủ đích** trước bảo vệ: nâng Express 4→5 hay Prisma 5→7 là thay đổi phá vỡ, không nên làm sát ngày bảo vệ |
+| 6 | Phụ thuộc còn cách bản mới nhất vài phiên bản chính | Đã **đóng băng có chủ đích** trước bảo vệ: nâng Express 4→5 hay Prisma 5→7 là thay đổi phá vỡ, không nên làm sát ngày bảo vệ |
+
+### Một điểm yếu đã được sửa dứt điểm — nên chủ động khoe
+
+Hai chỗ dưới đây từng nằm trong danh sách hoãn, nay **đã sửa và có kiểm thử bảo vệ**:
+
+| Chỗ sửa | Trước | Sau |
+|---|---|---|
+| `backend/src/app.ts` — danh sách trắng CORS | Luôn gồm `http://localhost:5173`, `http://localhost:3000` và `env.feUrl`, kể cả ở môi trường thật | Ở môi trường thật **chỉ còn `env.feUrl`**; hai địa chỉ `localhost` chỉ tồn tại khi chạy phát triển |
+| `backend/src/middleware/errorHandler.ts` — lỗi tầng body-parser | JSON sai cú pháp và body vượt giới hạn đều rơi xuống nhánh cuối, trả **500** | JSON sai cú pháp → **400**; body vượt 1 MiB → **413**; cả hai giữ đúng hợp đồng `success: false` và không phản chiếu nội dung body vào response |
+
+Cách nói trước hội đồng: *"Hai chỗ này em phát hiện khi tự rà lại, đã sửa và viết thêm 12 phép kiểm ở `httpBoundary.test.ts` để chúng không tái diễn — trong đó có ca xác nhận môi trường thật từ chối cấp quyền CORS cho `localhost`."*
 
 ---
 
 ## Phần D — Số liệu phải thuộc
 
-Đo lại ngày 06/09/2026, tất cả cổng đều **xanh**:
+Đo lại ngày 08/09/2026 sau khi sửa CORS và errorHandler, tất cả cổng đều **xanh**:
 
 | Hạng mục | Số |
 |---|---|
-| Tệp mã nguồn và cấu hình | **162** |
+| Tệp mã nguồn và cấu hình | **164** |
 | Endpoint API | **46** |
 | Bảng cơ sở dữ liệu | **11** |
 | Service ở backend | **14** |
 | Middleware | **8** |
-| Phép khẳng định backend | **345** |
+| Phép khẳng định backend | **357** |
 | Test frontend | **13** (4 tệp) |
 | Kịch bản E2E | **6** |
-| Tệp test | **15** |
+| Tệp test | **16** |
 | Số trang báo cáo (bản PDF) | **72** |
 | Lỗ hổng `npm audit` | **0** ở cả backend lẫn frontend |
 | Gói JS lớn nhất sau build | 323,96 kB (nén gzip **102,85 kB**) |

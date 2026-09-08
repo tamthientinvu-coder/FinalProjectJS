@@ -8,6 +8,16 @@ import { env } from "../config/env";
  * Mọi lỗi trong controller chỉ cần next(err) là về đây.
  */
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction): void {
+  // Lỗi body-parser là lỗi request; không phản chiếu nội dung body vào response.
+  if (err.type === "entity.parse.failed" && err.status === 400) {
+    res.status(400).json({ success: false, message: "Nội dung JSON không hợp lệ" });
+    return;
+  }
+  if (err.type === "entity.too.large" && err.status === 413) {
+    res.status(413).json({ success: false, message: "Dữ liệu gửi lên vượt quá giới hạn cho phép" });
+    return;
+  }
+
   // 1) Lỗi nghiệp vụ đã lường trước
   if (err instanceof AppError) {
     logger.warn({ status: err.statusCode, path: req.originalUrl }, err.message);

@@ -352,7 +352,7 @@ docker compose -f docker-compose.full.yml up --build
 5. **Nạp dữ liệu mẫu** — mở một cửa sổ Terminal khác (để cửa sổ đầu tiên tiếp tục chạy), gõ:
 
 ```bash
-docker compose -f docker-compose.full.yml exec backend npm run seed
+docker compose -f docker-compose.full.yml run --build --rm seed
 ```
 
 6. Mở trình duyệt tại `http://localhost:8080`, đăng nhập thử như Bước 6

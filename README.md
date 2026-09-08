@@ -111,7 +111,7 @@ Copy-Item .env.example .env
 
 docker compose -f docker-compose.full.yml up --build
 # Chỉ chạy seed lần đầu trên môi trường demo trống; lệnh này xóa dữ liệu nghiệp vụ hiện có
-docker compose -f docker-compose.full.yml exec backend npm run seed
+docker compose -f docker-compose.full.yml run --build --rm seed
 ```
 
 Frontend ở <http://localhost:8080>, API ở <http://localhost:3000>.

@@ -24,3 +24,9 @@ frontend/playwright-report/
 frontend/test-results/
 # Thư mục rỗng do driver NVIDIA sinh ra ở gốc dự án
 NVIDIA Corporation/
+
+# Bằng chứng kiểm tra và bản render cục bộ, có thể tạo lại
+artifacts/
+
+# Ban nguon Word cua bao cao va huong dan - giu tren may, khong dua len GitHub
+docs/*.docx

@@ -684,3 +684,65 @@ Lỗi đã vá `6f3d746` (ô tìm kiếm nhảy về từ khóa cũ) và lỗi `
 3. **Phím giả lập chỉ vào được khi cửa sổ Chrome đang ở foreground.** Mở terminal A và B bằng `Start-Process` đẩy Chrome xuống dưới; từ đó `computer type` báo thành công nhưng ô nhập vẫn rỗng — một kiểu thất bại im lặng rất dễ nhầm là lỗi ứng dụng. Luôn kiểm lại `input.value` sau khi gõ trước khi kết luận bất cứ điều gì. `SetForegroundWindow` từ tiến trình nền bị Windows chặn; cách chắc chắn là người dùng nhấp một lần vào cửa sổ Chrome.
 
 Không tệp nào trong `backend/src` hay `frontend/src` bị đụng tới. Phép đếm 162 tệp và Bảng 1.6 giữ nguyên.
+
+## 08/09/2026 — Giữ bản sửa CORS/errorHandler, đo lại và đồng bộ toàn bộ số liệu hồ sơ
+
+### Bối cảnh: một phiên công cụ khác đã sửa mã nguồn rồi dừng giữa chừng
+
+Một phiên Codex chạy song song đã sửa `backend/src`, thêm kiểm thử và script, rồi **hết hạn mức trước khi cập nhật hồ sơ**. Kho rơi vào trạng thái xấu nhất: **mã nguồn mới, tài liệu cũ**. Quyết định ngày 06/09 là đóng băng mã nguồn; lần này chọn ngược lại — **giữ bản sửa và làm lại số liệu** — vì hai bản sửa đều đúng và một trong hai chính là điểm yếu đã tự nhận.
+
+### Hai bản sửa được giữ
+
+| Tệp | Nội dung | Kiểm thử bảo vệ |
+|---|---|---|
+| `backend/src/app.ts` | Danh sách trắng CORS ở môi trường thật chỉ còn `env.feUrl`; hai địa chỉ `localhost` chỉ còn khi chạy phát triển | 5 ca đầu của `httpBoundary.test.ts` |
+| `backend/src/middleware/errorHandler.ts` | JSON sai cú pháp → **400**, body vượt 1 MiB → **413** (trước đây cả hai rơi xuống nhánh cuối và trả 500) | 6 ca sau, gồm ca xác nhận không phản chiếu `password`/stack vào response |
+
+Kèm theo: `backend/tests/httpBoundary.test.ts` (12 phép kiểm), `scripts/check-project.ps1`, tách seed khỏi image production trong `docker-compose.full.yml` (image production không cài `ts-node`).
+
+### Hiệu chuẩn cách đếm — bài học quan trọng nhất của lần này
+
+Đo lại bằng `Get-Content | Measure-Object -Line` ra **3.792** dòng backend, lệch 503 so với 4.295 đã in. Nguyên nhân: **`Measure-Object -Line` bỏ qua dòng trống**. Đếm bằng số phần tử ra 4.307 — đúng bằng 4.295 + 12.
+
+Nhưng front-end thì đếm phần tử ra 6.216 trong khi `.docx` in **6.215**, dù `frontend/src` không hề bị đụng. Chênh đúng 1, và đúng bằng số tệp không kết thúc bằng ký tự xuống dòng. Vậy **phép đếm gốc của hồ sơ là `wc -l`** — đếm ký tự `\n`, nên tệp thiếu dòng cuối bị hụt 1.
+
+Kiểm chứng lại bằng `wc -l`, cả ba con số đã in đều tái lập chính xác: back-end 4.295 (nay 4.307), front-end 6.215 (không đổi), kiểm thử 2.078 / 18 tệp (nay 2.135 / 19). **Từ nay đo bằng `wc -l`, không dùng `Measure-Object -Line`.**
+
+Nhân tiện phát hiện mục nhật ký ngày 05/09 chép sai front-end là "6.174 dòng" — con số trong `.docx` (**6.215**) mới đúng. Hồ sơ đúng, nhật ký sai.
+
+### Cổng chất lượng sau khi giữ bản sửa
+
+| Cổng | Kết quả |
+|---|---|
+| Backend `tsc` · `eslint` | sạch · sạch |
+| Backend `npm test` | **357 / 357** (345 cũ + 12 ca `httpBoundary`) |
+| Frontend `tsc` · `eslint` · `vitest` | sạch · sạch · 4 tệp / 13 ca |
+| Playwright E2E | **6 / 6** |
+| `vite build` | 318 ms, gói lớn nhất **323,96 kB** (gzip **102,85 kB**) — không đổi |
+| `npm audit` hai phía | **0 lỗ hổng** |
+
+### Số liệu đã đổi trong hồ sơ
+
+| Hạng mục | Cũ | Mới |
+|---|---|---|
+| Tổng tệp mã nguồn và cấu hình | 162 | **164** |
+| Back-end `src` | 4.295 dòng / 58 tệp | **4.307** dòng / 58 tệp |
+| Front-end `src` | 6.215 dòng / 52 tệp | không đổi |
+| Kiểm thử tự động | 2.078 dòng / 18 tệp | **2.135** dòng / **19** tệp |
+| Phép khẳng định | 345 | **357** |
+| Tổng dòng TypeScript (slide 15) | 10.510 | **10.522** |
+| Tệp test (tài liệu ôn) | 15 | **16** |
+
+Không đổi: 46 điểm cuối · 11 bảng · 3 kiểu liệt kê · 217 dòng lược đồ · 21 màn hình · 14 service · 8 middleware · 72 trang báo cáo.
+
+### Nơi đã sửa
+
+- `docs/BAO-CAO-DO-AN-LearnQuiz.docx` — Bảng 1.6 (4 dòng); Bảng 5.1 thêm dòng `httpBoundary.test.ts` 12 phép và sửa dòng tổng; 10 chỗ ghi `345` khắp báo cáo.
+- `docs/SLIDE-BAO-VE-LearnQuiz.pptx` — slide 2, 12, 15; **cả bảng dữ liệu nhúng của biểu đồ cột** slide 12 (cột "HTTP + hồi quy" 81 → 93, tổng cột nay đúng 357).
+- `docs/CAU-HOI-BAO-VE.md` — Phần C rút còn sáu điểm yếu (bỏ mục CORS vì đã sửa) và thêm mục "một điểm yếu đã sửa dứt điểm"; Phần D cập nhật số.
+
+⚠️ **Hai tệp `.pdf` cố ý KHÔNG sửa lần này** theo quyết định của chủ nhiệm đề tài. Vì vậy `BAO-CAO-DO-AN-LearnQuiz.pdf` và `SLIDE-BAO-VE-LearnQuiz.pdf` hiện **vẫn in số cũ** và lệch với bản `.docx`/`.pptx`. Muốn khớp thì vá chuỗi số trong PDF như đã làm ngày 05/09 — mọi cặp số lần này đều **cùng độ dài** (162→164, 4.295→4.307, 2.078→2.135, 18→19, 345→357, 10.510→10.522) nên bố cục và số trang 72 sẽ không đổi một li.
+
+### Không đưa bản nguồn Word lên GitHub
+
+Thêm `docs/*.docx` vào `.gitignore` và gỡ khỏi chỉ mục bằng `git rm --cached`. Tệp vẫn nằm trên máy. Phép đếm 164 không đổi vì bộ lọc của Bảng 1.6 vốn đã trừ `docs/`, `*.md`, `package-lock.json` và `.docx`.

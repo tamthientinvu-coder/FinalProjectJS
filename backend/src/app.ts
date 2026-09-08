@@ -22,7 +22,9 @@ app.set("trust proxy", 1);
 app.use(helmet());
 
 // 2) CORS - whitelist đúng origin của FE
-const whitelist = ["http://localhost:5173", "http://localhost:3000", env.feUrl].filter(Boolean);
+const whitelist = (env.isProd
+  ? [env.feUrl]
+  : ["http://localhost:5173", "http://localhost:3000", env.feUrl]).filter(Boolean);
 app.use(
   cors({
     origin: whitelist,
