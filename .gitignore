@@ -56,6 +56,9 @@ docs/SLIDE-BAO-VE-LearnQuiz.pdf
 # --- Huong dan trien khai ban PDF (ban .md DEPLOY.md van o lai) ---
 docs/HUONG-DAN-DEPLOY-CHI-TIET.pdf
 
+# --- Phieu ghi ket qua kiem tra tay (ban lam viec, giu tren may) ---
+docs/KET-QUA-KIEM-TRA-*.md
+
 # --- Ho so review va ke hoach cu, giu lam dau vet kiem chung ---
 docs/BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md
 docs/HUONG-DAN-HOAN-THIEN-BAO-CAO.md
