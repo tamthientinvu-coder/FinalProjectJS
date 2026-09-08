@@ -28,11 +28,28 @@ NVIDIA Corporation/
 # Bằng chứng kiểm tra và bản render cục bộ, có thể tạo lại
 artifacts/
 
-# Ban nguon Word cua bao cao va huong dan - giu tren may, khong dua len GitHub
-docs/*.docx
+# =====================================================================
+# TAI LIEU CHI GIU TREN MAY - KHONG BAO GIO DUA LEN GITHUB
+# =====================================================================
+# Cac tep duoi day da duoc go khoi chi muc bang: git rm --cached <tep>
+# Chung VAN NAM NGUYEN tren o dia va van truy duoc trong lich su commit;
+# .gitignore chi ngan chung bi them lai o nhung lan `git add` sau nay.
+#
+# Muon dua mot tep tro lai GitHub: xoa dong tuong ung o duoi, roi chay
+#   git add -f docs/<ten tep>
 
-# Ho so review va ke hoach cu - giu tren may lam dau vet kiem chung,
-# khong hien tren GitHub de cay tep docs/ gon lai
+# --- Ban nguon Word va PowerPoint cua ho so nop ---
+docs/*.docx
+docs/*.pptx
+
+# --- Tai lieu on bao ve (rieng tu) va slide ban PDF ---
+docs/CAU-HOI-BAO-VE.md
+docs/SLIDE-BAO-VE-LearnQuiz.pdf
+
+# --- Huong dan trien khai ban PDF (ban .md DEPLOY.md van o lai) ---
+docs/HUONG-DAN-DEPLOY-CHI-TIET.pdf
+
+# --- Ho so review va ke hoach cu, giu lam dau vet kiem chung ---
 docs/BAO-CAO-KHAC-PHUC-TOI-UU-2026-09-01.md
 docs/HUONG-DAN-HOAN-THIEN-BAO-CAO.md
 docs/HUONG-DAN-KIEM-TRA-TAY-2026-09-02.md
@@ -40,10 +57,3 @@ docs/HUONG-DAN-SUA-CHUA-TIEN-BAO-VE.md
 docs/KE-HOACH-REVIEW-TOT-NGHIEP-2026-09-02.md
 docs/LUA-CHON-HA-TANG-VERCEL-VS-RENDER.md
 docs/REVIEW-TOT-NGHIEP-2026-09-01.md
-
-# Tai lieu on bao ve, slide va huong dan trien khai chi tiet
-# - giu tren may, khong dua len GitHub
-docs/CAU-HOI-BAO-VE.md
-docs/HUONG-DAN-DEPLOY-CHI-TIET.pdf
-docs/SLIDE-BAO-VE-LearnQuiz.pdf
-docs/SLIDE-BAO-VE-LearnQuiz.pptx

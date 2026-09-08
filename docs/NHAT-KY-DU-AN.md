@@ -840,3 +840,17 @@ Ba tệp còn lại không được `README.md` hay bất kỳ tài liệu giữ
 `BAO-CAO-DO-AN-LearnQuiz.pdf` · `DE-AN.md` · `DEPLOY.md` · `HUONG-DAN-KIEM-TRA-TAY.md` · `MAU-KET-QUA-KIEM-TRA.md` · `NHAT-KY-DU-AN.md` · `hinh-ve.zip`
 
 Trên đĩa vẫn đủ 20 tệp. Phép đếm **164 không đổi** — bộ lọc Bảng 1.6 vốn đã trừ toàn bộ `docs/`.
+
+### Gộp và kiểm chứng `.gitignore`
+
+Ba khối loại trừ thêm rời rạc qua ba lần đã được gộp thành một khối duy nhất, có tiêu đề rõ và ghi kèm cách hoàn tác (`git add -f docs/<tệp>` sau khi xóa dòng tương ứng). Mở rộng `docs/*.pptx` bên cạnh `docs/*.docx` để mọi bản nguồn Office về sau đều không lọt lên.
+
+Không tin vào việc "đã ghi vào tệp" — đã kiểm chứng bằng ba phép thử:
+
+| Phép thử | Kết quả |
+|---|---|
+| `git check-ignore -v` trên **13 tệp** cần chặn | cả 13 đều bị chặn |
+| `git check-ignore` trên **7 tệp** phải ở lại GitHub | không tệp nào bị chặn nhầm |
+| `git add -A` rồi soi chỉ mục | không một tệp bị chặn nào lọt vào |
+
+`docs/` trong chỉ mục vẫn đúng 7 tệp; trên đĩa vẫn đủ 20.
