@@ -817,3 +817,26 @@ Trước khi gỡ đã rà liên kết chéo: bảy tệp này **chỉ được 
 `docs/` trên GitHub nay còn 11 tệp: báo cáo và slide bản PDF/PPTX, đề án, tài liệu ôn, hướng dẫn kiểm tra tay hiện hành, mẫu kết quả, hướng dẫn triển khai, nhật ký và `hinh-ve.zip`.
 
 Việc này **không đụng phép đếm 164 tệp** — bộ lọc của Bảng 1.6 vốn đã trừ toàn bộ `docs/`.
+
+## 08/09/2026 (tối, tiếp) — Gỡ thêm bốn tệp khỏi GitHub, `docs/` còn bảy
+
+Gỡ bằng `git rm --cached` và chặn trong `.gitignore` — **tệp vẫn nằm nguyên trên máy**:
+
+| Tệp | Lý do giữ riêng |
+|---|---|
+| `CAU-HOI-BAO-VE.md` | Tài liệu ôn cá nhân, gồm cả bảng điểm yếu tự nhận — không cần công khai |
+| `HUONG-DAN-DEPLOY-CHI-TIET.pdf` | Bản PDF của hướng dẫn triển khai; `DEPLOY.md` vẫn ở lại |
+| `SLIDE-BAO-VE-LearnQuiz.pdf` | Slide bảo vệ |
+| `SLIDE-BAO-VE-LearnQuiz.pptx` | Bản nguồn của slide |
+
+### Một liên kết chết đã kịp chặn
+
+`README.md` dòng 6 có cụm `🎓 Ôn bảo vệ: [docs/CAU-HOI-BAO-VE.md](docs/CAU-HOI-BAO-VE.md)`. Gỡ tệp mà để nguyên dòng đó thì **trang chủ kho có ngay một liên kết 404** — thứ đập vào mắt đầu tiên khi ai đó mở kho. Đã bỏ hẳn cụm này; các liên kết còn lại trong dòng 6 đều trỏ tới tệp vẫn ở trên GitHub.
+
+Ba tệp còn lại không được `README.md` hay bất kỳ tài liệu giữ lại nào trỏ tới — chỉ nhật ký nhắc tên, mà đó là chuyện bình thường của biên niên.
+
+### `docs/` trên GitHub nay còn 7 tệp
+
+`BAO-CAO-DO-AN-LearnQuiz.pdf` · `DE-AN.md` · `DEPLOY.md` · `HUONG-DAN-KIEM-TRA-TAY.md` · `MAU-KET-QUA-KIEM-TRA.md` · `NHAT-KY-DU-AN.md` · `hinh-ve.zip`
+
+Trên đĩa vẫn đủ 20 tệp. Phép đếm **164 không đổi** — bộ lọc Bảng 1.6 vốn đã trừ toàn bộ `docs/`.
