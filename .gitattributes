@@ -1,0 +1,21 @@
+# Chuan hoa xuong dong: kho luu LF, checkout theo he dieu hanh
+* text=auto eol=lf
+
+# Script Windows phai giu CRLF
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# File nhi phan - khong dung cham
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.docx  binary
+*.pptx  binary
+*.xlsx  binary
+*.zip   binary
+*.woff  binary
+*.woff2 binary

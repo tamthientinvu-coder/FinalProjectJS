@@ -68,3 +68,8 @@ docs/HUONG-DAN-SUA-CHUA-TIEN-BAO-VE.md
 docs/KE-HOACH-REVIEW-TOT-NGHIEP-2026-09-02.md
 docs/LUA-CHON-HA-TANG-VERCEL-VS-RENDER.md
 docs/REVIEW-TOT-NGHIEP-2026-09-01.md
+
+# --- File in an dan xuat (tai tao duoc tu DOCX, khong luu kho) ---
+docs/IN-AN/*.pdf
+docs/_preview_tmp/
+docs/*.bak-*.docx
