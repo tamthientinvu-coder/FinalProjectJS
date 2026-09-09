@@ -1,7 +1,7 @@
 # Hướng dẫn kiểm tra thủ công LearnQuiz
 
 Cập nhật ngày 05/09/2026. Đây là hướng dẫn hiện hành; thay thế bản ngày 02/09.
-Thực hiện trên local hoặc CSDL thử được phép ghi dữ liệu. Hướng dẫn là **kịch bản cần chạy**, không phải biên bản các ca đã đạt. Kết quả đã chạy nằm trong [nhật ký dự án](NHAT-KY-DU-AN.md).
+Thực hiện trên local hoặc CSDL thử được phép ghi dữ liệu. Hướng dẫn là **kịch bản cần chạy**, không phải biên bản các ca đã đạt. Kết quả đã chạy nằm trong [nhật ký thực hiện đồ án](NHAT-KY-THUC-HIEN-DO-AN.md).
 
 ## 0. Chuẩn bị và quy ước
 
