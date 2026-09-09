@@ -1054,7 +1054,7 @@ Phải đưa vào một tệp `.ps1` rồi chạy bằng `-File`, vì viết th�
 
 ## 09/09/2026 — Hoàn tất mục 1 bộ kiểm tra tay: AU01, AU02, AU03, AU04 đều PASS
 
-Phiên kiểm tra tay thứ hai, làm theo lối **một bước mỗi lượt**: Claude đưa một bước, chủ nhiệm đề tài tự thao tác trên Chrome, báo kết quả, Claude ghi vào `docs/KET-QUA-KIEM-TRA-2026-09-08.md` rồi mới đưa bước kế. Không tự động hóa, không gộp bước.
+Phiên kiểm tra tay thứ hai, làm theo lối **một bước mỗi lượt**: mỗi bước, chủ nhiệm đề tài tự thao tác trên Chrome, báo kết quả, ghi vào `docs/KET-QUA-KIEM-TRA-2026-09-08.md` rồi mới đưa bước kế. Không tự động hóa, không gộp bước.
 
 **Kết thúc phiên: PASS 8 · FAIL 0 · BLOCKED 0 · NOT RUN 20.** Mục 1 (khách và xác thực) **xong 100%**.
 
