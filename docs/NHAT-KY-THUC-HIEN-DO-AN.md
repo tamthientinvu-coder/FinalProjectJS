@@ -33,7 +33,7 @@ Mỗi tính năng, mỗi lần sửa lỗi tôi đều đi qua bốn bước:
 | **localhost (`:3000` + `:5173`)** | Môi trường thử chính. Mọi thao tác ghi dữ liệu đều chỉ làm ở đây, không bao giờ làm trên bản đang chạy thật |
 | **Docker + Adminer** | PostgreSQL cổng `5433` trong container để không đụng PostgreSQL đã cài trên máy; Adminer ở `:8080` để xem bảng nhanh |
 | **`psql` trong container** | Khi cần con số chính xác, tôi truy vấn thẳng cơ sở dữ liệu thay vì tin giao diện. Ví dụ kiểm mật khẩu có được băm thật không, hay kiểm phiên đăng nhập đã bị thu hồi chưa |
-| **Kiểm thử tự động** | Backend: 12 script `ts-node` chạy bằng `npm test` — **357 phép khẳng định**. Frontend: `vitest` — 4 tệp / 13 test. Playwright cho 6 kịch bản E2E |
+| **Kiểm thử tự động** | Backend: 12 script `ts-node` chạy bằng `npm test` — **357 phép khẳng định**. Frontend: `vitest` — 5 tệp / 20 test. Playwright cho 6 kịch bản E2E |
 
 ---
 
@@ -128,6 +128,19 @@ Tiến độ hiển thị cũng **tính tay khớp**: khóa có 3 bài, hoàn th
 
 **Một lỗi tự tìm ra và sửa trong ngày:** ở trang quản lý người dùng, React ghi lỗi `<p> cannot contain a nested <div>`. Truy nguyên tới `AdminUsersPage.tsx`: một `Typography variant="body2"` (MUI kết xuất thành `<p>`) đang bọc một `Chip` (kết xuất thành `<div>`) — DOM không hợp lệ. Sửa bằng cách thêm `component="div"` **vào chính dòng có sẵn**, nên `git diff --stat` chỉ báo *1 insertion, 1 deletion*. Sau khi sửa: chạy lại đủ **7 cổng chất lượng** (đều xanh) và **đo lại số dòng** — trùng khớp tuyệt đối với bảng đã in trong hồ sơ.
 
+### 09/09 (chiều) — Bốn bản tối ưu nhỏ, và bài học về việc đo lại sau mỗi lần sửa
+
+Trong lúc kiểm tay tôi ghi lại mọi thứ gợn mắt nhưng **không sửa ngay**, để không làm nhiễu phiên kiểm thử đang chạy. Cuối ngày mới đem ra làm bốn việc:
+
+- **Đ1 — favicon và thẻ mô tả.** Mỗi trang đều để lại một `GET /favicon.ico` trả 404 trong tab Network. Tôi tự vẽ `favicon.svg` rồi thêm `<link rel="icon">`, `meta description` và `theme-color`.
+- **Đ2 — `autoComplete` cho ba ô còn thiếu ở trang đăng ký.** Console cảnh báo `[DOM] Input elements should have autocomplete attributes`; đây là vấn đề khả năng tiếp cận chứ không phải lỗi chạy.
+- **Đ3 — nạp động hai gói đo lường của Vercel.** Chúng chỉ có ý nghĩa ở bản chạy thật nhưng vẫn được tải ở bản dev. Bọc bằng `React.lazy` + `Suspense`, chỉ mount khi `import.meta.env.PROD`. Đo được: gói lớn nhất **323,96 → 319,64 kB** (gzip **102,85 → 101,54 kB**).
+- **Đ4 — `shouldReturnTo(from, role)`.** Sau khi đăng nhập, ứng dụng quay lại trang trước đó; nếu vai trò vừa đăng nhập không có quyền với trang ấy thì người dùng bị ném thẳng vào `/403` ngay sau khi đăng nhập **thành công**. Tôi tách bảng luật ra `router/routeAccess.ts` kèm 7 phép kiểm, có cả ca chặn URL tuyệt đối ra ngoài miền. Cần nói rõ: **bảng này không phải chốt chặn quyền** — việc chặn vẫn nằm ở `ProtectedRoute` và ở API — nên nếu nó lạc hậu thì chỉ hỏng trải nghiệm, không thành lỗ hổng.
+
+Bài học đi kèm: **mọi con số in trong báo cáo đều phải đo lại sau khi sửa mã.** Với lỗi `<p>` bọc `<div>` ở trên tôi cố ý sửa nằm gọn trong dòng có sẵn nên bảng số liệu không đổi; còn bốn bản tối ưu này có thêm tệp mới, nên tôi đo lại và cập nhật cả báo cáo Word lẫn slide — tổng TypeScript **10.522 → 10.576 dòng**.
+
+Buổi tối tôi dựng nốt bộ hồ sơ cho buổi báo cáo 11/09: thêm một slide *Quyết định kỹ thuật số 3* mô phỏng cơ chế gộp hàng đợi làm mới phiên, thêm hiệu ứng xuất hiện dần cho toàn bộ 18 slide, rồi soát lại những con số lệch giữa các tài liệu — sơ đồ tích hợp liên tục vẫn ghi **318 phép kiểm** trong khi bộ kiểm thử hiện có **357**; đã sửa.
+
 ---
 
 ## 4. Sáu bài học kỹ thuật tôi rút ra
@@ -176,18 +189,19 @@ Tóm lại: AI giúp tôi **học nhanh hơn và viết tài liệu gọn hơn**
 
 | Chỉ số | Giá trị |
 |---|---|
-| Tệp mã nguồn | **163** |
+| Tệp mã nguồn và cấu hình | **167** |
 | Back-end | **4.307 dòng / 58 tệp** |
-| Front-end | **6.215 dòng / 52 tệp** |
-| Tổng TypeScript | **10.522 dòng** |
-| Kiểm thử | **2.135 dòng / 19 tệp** |
+| Front-end | **6.269 dòng / 53 tệp** |
+| Tổng TypeScript | **10.576 dòng** |
+| Kiểm thử | **2.175 dòng / 20 tệp** |
 | Phép khẳng định (backend `npm test`) | **357** |
-| Kiểm thử frontend (`vitest`) | 4 tệp / 13 test |
-| Kịch bản E2E (Playwright) | 6/6 đạt |
+| Kiểm thử frontend (`vitest`) | 5 tệp / 20 test |
+| Kịch bản E2E (Playwright) | 6/6 đạt — đo ngày 08/09, **chưa chạy lại** sau đợt tối ưu 09/09 |
 | Endpoint API | 46 |
 | Bảng cơ sở dữ liệu | 11 |
 | Lỗ hổng `npm audit` (cả hai phía) | **0** |
-| Gói JavaScript lớn nhất sau build | 323,96 kB (gzip 102,86 kB) |
+| Gói JavaScript lớn nhất sau build | 319,64 kB (gzip 101,54 kB) |
+| Slide bảo vệ | 18 slide |
 
 **Kết quả kiểm thử thủ công tới 09/09:** 8 ca PASS · 0 FAIL · 0 BLOCKED.
 
@@ -196,8 +210,9 @@ Tóm lại: AI giúp tôi **học nhanh hơn và viết tài liệu gọn hơn**
 ## 7. Việc còn lại
 
 - Chạy nốt các nhóm kiểm thử tay: giảng viên tạo nội dung (I01–I03), luồng học viên (S01–S04), quản trị (A01–A04), ma trận API bằng Postman, tính năng AI, và kiểm giao diện đáp ứng.
-- Xuất lại hai bản PDF cho khớp số liệu mới nhất.
-- Bảo vệ **trước 27/09/2026** vì cơ sở dữ liệu Render gói miễn phí hết hạn sau ngày đó.
+- Chạy lại bộ E2E Playwright **sau khi xong toàn bộ kiểm thử tay** — bộ này ghi vào cơ sở dữ liệu và làm đổi ID, chạy giữa chừng sẽ hỏng bảng ID đang dùng.
+- Xuất lại bản PDF của slide cho khớp bộ 18 slide (bản PDF của báo cáo đã xuất lại ngày 09/09, 73 trang).
+- Báo cáo tại lớp **chiều 11/09/2026**; bảo vệ **trước 27/09/2026** vì cơ sở dữ liệu Render gói miễn phí hết hạn sau ngày đó.
 
 ---
 
