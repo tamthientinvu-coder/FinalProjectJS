@@ -1049,3 +1049,90 @@ WSL trên máy này đang hỏng (`Failed to attach disk … ext4.vhdx`) nên kh
 ```
 
 Phải đưa vào một tệp `.ps1` rồi chạy bằng `-File`, vì viết thẳng trong `powershell -Command "…"` lồng thì biến `$f`, `$n`, `$_` đều bị shell ngoài nuốt.
+
+---
+
+## 09/09/2026 — Hoàn tất mục 1 bộ kiểm tra tay: AU01, AU02, AU03, AU04 đều PASS
+
+Phiên kiểm tra tay thứ hai, làm theo lối **một bước mỗi lượt**: Claude đưa một bước, chủ nhiệm đề tài tự thao tác trên Chrome, báo kết quả, Claude ghi vào `docs/KET-QUA-KIEM-TRA-2026-09-08.md` rồi mới đưa bước kế. Không tự động hóa, không gộp bước.
+
+**Kết thúc phiên: PASS 8 · FAIL 0 · BLOCKED 0 · NOT RUN 20.** Mục 1 (khách và xác thực) **xong 100%**.
+
+### Môi trường: máy đã khởi động lại, ID không đổi
+
+Docker Desktop tự bật cùng máy nên `learnquiz_db` (5433, healthy) và `learnquiz_adminer` (8080) sống lại **cùng volume dữ liệu**; chỉ phải bật lại hai dev server. Truy vấn lại DB xác nhận **ID y nguyên**: khóa 26–32, bài 45–57, quiz 29–36, 8 tài khoản id 1–8. **Không phải seed lại** — tránh được việc phải lấy lại toàn bộ ID.
+
+Hai dev server bật bằng `Start-Process powershell -WindowStyle Minimized` thay vì gắn vào phiên điều khiển: lần đầu bật kiểu gắn phiên thì tiến trình chết theo khi máy nghỉ, mất 15 phút mới phát hiện.
+
+### Bốn ca xác thực — những bằng chứng đáng mang ra bảo vệ
+
+| Ca | Bằng chứng cốt lõi |
+|---|---|
+| **AU01** | 3 luật phía client (họ tên ≥ 2 · email đúng dạng · mật khẩu ≥ 6) chặn đúng từng trường, **không luật nào để lọt request** tới `:3000`. Tạo mới → **201**; email trùng → **409** (không phải 500), thân phản hồi **65 byte**, không lộ tên bảng/SQL/stack. DB: mật khẩu **bcrypt `$2a$10$`, 60 ký tự**; `role` nhận đúng `student`/`instructor`, **không** leo thang thành admin; form không có lựa chọn Quản trị (dropdown đúng 2 mục) |
+| **AU02** | `login` **200**, khối `data.user` trả đúng và chỉ đủ — **không có trường `password`**. `/my-courses` hiện đúng 2 khóa, tiến độ **1/3 · 33%** và **0/2 · 0%** — tính tay khớp bảng ID (khóa 26 có 3 bài, khóa 27 có 2 bài). Đăng xuất **200** → Back **vẫn ở `/login`**, không thoáng qua nội dung cũ, không request mới nào tới `/enrollments/me` |
+| **AU03** | 8/8 ô ma trận đúng. Điểm mạnh: vai sai bị chặn **ngay tại router**, **không phát sinh request nào** tới API của khu đó. Hai danh sách riêng tư đều có endpoint **phạm vi phía máy chủ**: `GET /courses/mine` (giảng viên) và `GET /enrollments/me` (học viên) — không lấy hết rồi lọc ở client |
+| **AU04** | Chuỗi quan sát trực tiếp: `me` **401** → `/auth/refresh` (**đúng 1 xhr** cho cả nhóm) → `me` chạy lại **thành công** → `enrollments/me` **304**. Chỉ **một** 401 trong 69 request, không vòng lặp (cờ `original._retry`). Refresh token bị thay bằng chuỗi rác → **xóa cả hai token**, về `/login`, Console sạch, **không treo hàng đợi** |
+
+### Điểm quan trọng nhất: đăng xuất thu hồi phiên ở **cả hai** phía
+
+Ban đầu tưởng có lỗi: `POST /auth/logout` trả **401**. Đọc mã thấy `logout` có middleware `authenticate`, còn `axiosClient` gặp 401 thì refresh rồi gọi lại một lần. Xác minh bằng dữ liệu chứ không suy luận: đăng xuất một lần "sạch" ngay sau đăng nhập → **200**, và `users.refresh_token` chuyển từ token 207 ký tự thành **`NULL`**. Kiểm cả ba tài khoản dùng trong phiên (id 4, 9, 10) — **đều `NULL`**.
+
+Kết luận: 401 kia chỉ là tiếng ồn của cơ chế refresh khi access token đã hết hạn; **phiên vẫn bị thu hồi**. Câu trả lời cho hội đồng đã soạn sẵn trong phiếu.
+
+### Lỗi L01 — DOM lồng sai, đã sửa và đo lại
+
+`AdminUsersPage.tsx` dòng 221 dùng `<Typography variant="body2">` (kết xuất `<p>`) bọc một `<Chip>` (kết xuất `<div>`) ở dòng 223 → React ghi error `<p> cannot contain a nested <div>`. Chỉ xuất hiện ở `/admin/users` khi bảng hiển thị dòng của chính admin (chip *"Bạn"*).
+
+Sửa: thêm `component="div"` vào **chính dòng 221**. `git diff --stat` cho **1 file changed, 1 insertion(+), 1 deletion(-)** — thay chữ trong dòng có sẵn.
+
+| Cổng chất lượng chạy lại | Kết quả |
+|---|---|
+| FE `tsc` · `eslint` · `vitest` · `build` | 0 · 0 · **4 tệp / 13 test** · ✓ 418 ms, gói lớn nhất **323,96 kB** (gzip 102,86) |
+| BE `tsc` · `eslint` · `npm test` | 0 · 0 · exit 0, đếm được đúng **357** phép khẳng định / 12 tệp |
+| Số dòng đo lại | BE **4.307 / 58** · FE **6.215 / 52** · tổng **10.522** |
+
+Trùng khớp tuyệt đối Bảng 1.6 và slide 15. Kiểm lại trên trình duyệt: hết dòng đỏ, chip *"Bạn"* vẫn đúng, nút khóa admin vẫn bị vô hiệu hóa.
+
+### Bẫy công cụ mới — kiểm thử backend KHÔNG chạy bằng vitest
+
+`npx vitest run` trong `backend` báo *"No test suite found"* ở cả **12 tệp**. Đây là **âm tính giả**, không phải hồi quy: `backend/tests/*.test.ts` là **script `ts-node` thuần**, và `npm test` chạy tuần tự 12 tệp bằng `ts-node --transpile-only`. Chỉ front-end mới dùng vitest.
+
+Tài liệu trạng thái trước đây ghi "Backend `vitest`" là **sai tên công cụ** — đã đính chính. Câu trả lời đúng khi bị hỏi: **`npm test` — 12 script ts-node, 357 phép khẳng định**.
+
+### Hai đính chính tài liệu khác
+
+- Endpoint trạng thái AI **không** ở `/ai/status` mà ở **`/api/v1/ai/status`**, và trả **401** khi chưa xác thực → mục 6 phải đăng nhập trước. *(Trong bộ kiểm thử backend, `GET /ai/status` trả 200 vì test gắn app trực tiếp, không qua tiền tố `/api/v1`.)*
+- Đăng ký **không** tự đăng nhập: `RegisterPage.tsx:55` luôn `navigate("/login", { replace: true })` cho cả hai vai trò.
+
+### Ba quan sát không tính lỗi
+
+| Quan sát | Kết luận |
+|---|---|
+| `localStorage` của `localhost:5173` có khóa `cart-state` chứa *"Chuột Logitech MX Master 3S"* | Rác của một đồ án khác từng chạy trên **cùng origin**. localStorage gắn theo origin nên mọi ứng dụng dev dùng cổng 5173 dùng chung kho này. Không phải lỗi đồ án |
+| Sau đăng nhập, học viên bị đưa về `/403` thay vì `/dashboard` | Đúng thiết kế: `LoginPage.tsx:34-35` quay lại `location.state.from` — ở đây `from` là route quản trị của phiên trước. Ghi thành đề xuất tối ưu, chưa sửa |
+| Lỗi đỏ `startTime` của `@vercel/speed-insights` vẫn xuất hiện lẻ tẻ ở dev | Lọc Network bằng `insight` cho thấy Vite **vẫn tải** `@vercel_speed-insights_react.js` (200 OK, 16.957 byte) vì `import` ở đầu `main.tsx` là vô điều kiện, nhưng **component không được mount**. Stack lỗi trỏ `VM…` chứ không trỏ tệp dep → nguồn nghiêng về script tiêm của tiện ích Chrome. Chưa kết luận dứt điểm |
+
+### AU04: sửa cấu hình rồi trả về gốc
+
+`backend/.env` đổi `JWT_ACCESS_EXPIRES` `15m` → `30s`, restart backend, chạy ca, rồi **trả về `15m`** và restart lần nữa (`/health` → `db=up`). `.env` nằm ngoài `backend/src` nên **không** ảnh hưởng số dòng. `git status` cuối phiên: đúng **một** tệp thay đổi là bản sửa L01.
+
+### Bốn đề xuất tối ưu đã ghi nhận, CHƯA sửa — chờ duyệt từng mục
+
+| # | Đề xuất | Đổi số dòng? |
+|---|---|---|
+| Đ1 | Thêm `favicon.ico`/`favicon.svg` để hết `GET /favicon.ico 404` ở mọi trang | **Không** đổi số dòng Bảng 1.6, **nhưng thêm 1 tệp** vào bộ đếm `git ls-files` → **163 tệp thành 164**, phải sửa `.docx` và slide. Không nên làm sát ngày bảo vệ |
+| Đ2 | Thêm `autoComplete="new-password"` cho hai ô mật khẩu ở `/register` (Chrome khuyến nghị `[DOM] Input elements should have autocomplete attributes`) | **Có khả năng +2 dòng** nếu prop xuống dòng riêng. Cần thử rồi đo lại |
+| Đ3 | Dùng `React.lazy`/dynamic import cho `@vercel/speed-insights` và `@vercel/analytics` để dev không tải gói đo lường | **Có**, sửa cấu trúc import ở `main.tsx` |
+| Đ4 | Khi vai trò mới không có quyền với `location.state.from`, rơi về `/dashboard` thay vì hiện `/403` | **Có**, thêm nhánh kiểm tra quyền trong `LoginPage.tsx` |
+
+Đánh giá: cả bốn đều là **cải thiện thẩm mỹ hoặc trải nghiệm**, không có mục nào là lỗi chức năng. Ba mục Đ2–Đ4 đổi số dòng nên rơi vào đúng bài học ngày 08/09. Khuyến nghị: **giữ nguyên tới sau ngày bảo vệ**.
+
+### Việc còn lại
+
+- [ ] **Mục 2** — I01–I03 (giảng viên tạo khóa, bài, quiz, gửi duyệt). **Đường găng**: tạo dữ liệu cho mục 3 và 4 dùng. Nên dùng tài khoản QA Giảng viên **id 10** để không đụng dữ liệu seed
+- [ ] **Mục 3** — S01–S04 · **Mục 4** — I04, I05, A01–A04 · **Mục 5** — Postman · **Mục 6** — AI Gemini · **Mục 7** — UI/responsive
+- [ ] **Xuất lại hai bản PDF** — bản báo cáo còn ghi 164, phải thành 163
+- [ ] Ping `https://learnquiz-api.onrender.com/health` trước 30 phút khi bảo vệ
+- [ ] Xác nhận ngày bảo vệ trước **27/09/2026** (hạn DB Render gói miễn phí)
+
+**Hai tài khoản thử tạo trong phiên** (DB cục bộ, xóa được bằng `npm run seed`): id **9** `qa-hv-260909@example.com` (student) · id **10** `qa-hv-260909-gv@example.com` (instructor). Tổng người dùng: **10**.

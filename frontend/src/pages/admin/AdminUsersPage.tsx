@@ -219,7 +219,7 @@ export default function AdminUsersPage() {
                           {u.name.charAt(0).toUpperCase()}
                         </Avatar>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          <Typography variant="body2" component="div" sx={{ fontWeight: 600 }}>
                             {u.name}
                             {isMe && <Chip size="small" label="Bạn" sx={{ ml: 1 }} />}
                           </Typography>
