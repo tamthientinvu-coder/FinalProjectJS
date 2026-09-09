@@ -6,6 +6,7 @@ import { Paper, Typography, TextField, Button, Alert, Stack, Box, Divider } from
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { handleApiError } from "../utils/handleApiError";
+import { shouldReturnTo } from "../router/routeAccess";
 
 const schema = yup.object({
   email: yup.string().required("Vui lòng nhập email").email("Email không đúng định dạng"),
@@ -30,9 +31,11 @@ export default function LoginPage() {
   const onSubmit = async (values: FormValues) => {
     setServerError("");
     try {
-      await login(values.email, values.password);
+      const user = await login(values.email, values.password);
       const from = (location.state as { from?: string } | null)?.from;
-      navigate(from ?? "/dashboard", { replace: true });
+      // Chỉ quay lại trang cũ khi vai trò vừa đăng nhập có quyền với nó, tránh
+      // đưa người dùng thẳng vào /403 ngay sau khi đăng nhập thành công.
+      navigate(shouldReturnTo(from, user.role) ? from! : "/dashboard", { replace: true });
     } catch (err) {
       setServerError(handleApiError(err));
     }

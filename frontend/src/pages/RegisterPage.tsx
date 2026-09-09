@@ -75,6 +75,7 @@ export default function RegisterPage() {
           <TextField
             label="Họ và tên"
             fullWidth
+            autoComplete="name"
             {...register("name")}
             error={!!errors.name}
             helperText={errors.name?.message}
@@ -91,6 +92,7 @@ export default function RegisterPage() {
             label="Mật khẩu"
             type="password"
             fullWidth
+            autoComplete="new-password"
             {...register("password")}
             error={!!errors.password}
             helperText={errors.password?.message}
@@ -99,6 +101,7 @@ export default function RegisterPage() {
             label="Nhập lại mật khẩu"
             type="password"
             fullWidth
+            autoComplete="new-password"
             {...register("confirmPassword")}
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword?.message}

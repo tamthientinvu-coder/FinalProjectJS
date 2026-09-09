@@ -1,13 +1,20 @@
-import React, { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { RouterProvider } from "react-router-dom";
 import theme from "./theme/theme";
 import router from "./router";
 import { AuthProvider } from "./context/AuthContext";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
+
+// Hai gói đo lường của Vercel chỉ có ý nghĩa ở production. Nạp động để bản dev
+// không tải chúng: Console sạch và Vite bớt một bước prebundle.
+const SpeedInsights = lazy(() =>
+  import("@vercel/speed-insights/react").then((m) => ({ default: m.SpeedInsights }))
+);
+const Analytics = lazy(() =>
+  import("@vercel/analytics/react").then((m) => ({ default: m.Analytics }))
+);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -18,8 +25,12 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           <RouterProvider router={router} />
         </Suspense>
       </AuthProvider>
-      {import.meta.env.PROD && <SpeedInsights />}
-      {import.meta.env.PROD && <Analytics />}
+      {import.meta.env.PROD && (
+        <Suspense fallback={null}>
+          <SpeedInsights />
+          <Analytics />
+        </Suspense>
+      )}
     </ThemeProvider>
   </React.StrictMode>
 );
