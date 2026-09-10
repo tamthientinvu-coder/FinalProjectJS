@@ -3,7 +3,7 @@
 **Học viên:** Vũ Tâm Thiện Tín
 **Lớp:** Lập trình Full-stack JavaScript — Khóa 312, Trung Tâm Tin Học, ĐH KHTN TP.HCM
 **Đề tài:** số 4 — Nền Tảng Học Tập & Quiz Trực Tuyến
-**Thời gian thực hiện:** 22/08/2026 → 09/09/2026 · **51 commit** trên `main`
+**Thời gian thực hiện:** 22/08/2026 → 10/09/2026 · **51 commit** trên `main`
 
 ---
 
@@ -141,6 +141,17 @@ Bài học đi kèm: **mọi con số in trong báo cáo đều phải đo lại
 
 Buổi tối tôi dựng nốt bộ hồ sơ cho buổi báo cáo 11/09: thêm một slide *Quyết định kỹ thuật số 3* mô phỏng cơ chế gộp hàng đợi làm mới phiên, thêm hiệu ứng xuất hiện dần cho toàn bộ 18 slide, rồi soát lại những con số lệch giữa các tài liệu — sơ đồ tích hợp liên tục vẫn ghi **318 phép kiểm** trong khi bộ kiểm thử hiện có **357**; đã sửa.
 
+### 10/09 — Hoàn tất kiểm thử toàn diện, phát hiện hai lỗi thực tế L02 và L03, và chạy lại E2E
+
+Đây là ngày kiểm thử nước rút trước buổi báo cáo. Tôi phối hợp cùng công cụ AI để tự động hóa kịch bản kiểm thử API và rà soát toàn bộ hệ thống:
+
+- **Hoàn tất toàn bộ các nhóm kiểm thử:** I01 (tạo khóa/bài), S02–S04 (làm quiz, nộp bài, chống đua trạng thái), I04–I05 (bảo toàn lịch sử duyệt, đối chiếu thống kê), A01–A04 (duyệt/từ chối, danh mục, khóa tài khoản, tổng quan), mục 6 (AI Gemini), mục 7 (chụp 19 ảnh UI Responsive trên 3 kích thước viewport).
+- **Phát hiện lỗi L02 (API17):** Gửi ID vượt phạm vi `INT4` của PostgreSQL (`999999999999999`) vào endpoint `/lessons/:id` làm máy chủ quăng ngoại lệ 500 kèm lộ stack trace và đường dẫn nội bộ máy chủ. Đã vá tại `validateId.ts` bằng hằng số `MAX_POSTGRES_INT4 = 2147483647` để trả 400 Bad Request chuẩn ngữ nghĩa.
+- **Phát hiện lỗi L03 (AI Gemini):** Model `gemini-3.6-flash` có cơ chế suy luận nội bộ (thinking tokens) mặc định bật. Hai hàm tóm tắt bài học và giải thích đáp án sai đặt `maxOutputTokens: 512` quá thấp, token suy luận chiếm hết ngân sách khiến câu trả lời bị cắt cụt; nguy hiểm hơn, câu trả lời hỏng bị cache vào cơ sở dữ liệu. Đã vá trong `aiService.ts`: nâng `maxOutputTokens` lên `2048`, bổ sung hàm kiểm chứng `isPlausibleProse` chặn cache dữ liệu rác và ném 502 yêu cầu thử lại.
+- **Đ7 — Chuẩn hóa thông báo khóa tài khoản:** Phát hiện câu chú thích trong `AdminUsersPage.tsx` mô tả trễ 15 phút là không đúng với mã nguồn thật: `authenticate.ts` tra cứu DB ở mỗi request nên tài khoản bị khóa bị chặn tức thì ở request kế tiếp. Đã sửa câu chữ trong giao diện và cập nhật câu hỏi bảo vệ B6c.
+- **Chạy lại Playwright E2E:** 6/6 kịch bản xanh toàn bộ trong 8,5 giây.
+- **Đo lại số dòng và cập nhật hồ sơ:** Do hai bản vá L02 và L03 thêm 37 dòng backend, tôi đo lại toàn bộ: Back-end **4.344 dòng / 58 tệp**, Front-end **6.269 dòng / 53 tệp**, tổng TypeScript **10.613 dòng / 111 tệp**, kiểm thử **2.175 dòng / 20 tệp**, tổng tệp tracked giữ đúng **167 tệp**. Đã đồng bộ số liệu vào Bảng 1.6 Word và Slide 15 PowerPoint.
+
 ---
 
 ## 4. Sáu bài học kỹ thuật tôi rút ra
@@ -163,7 +174,7 @@ Tôi công khai đầy đủ phần này để hội đồng đánh giá đúng 
 | Công cụ | Phiên bản | Dùng vào việc gì |
 |---|---|---|
 | **ChatGPT** | bản miễn phí | Tra cứu cú pháp và khái niệm khi gặp lần đầu (mức cô lập giao dịch, `trust proxy`, cách viết truy vấn Prisma tránh N+1); giải thích thông báo lỗi dài |
-| **Claude** | bản miễn phí | Đọc và giải thích đoạn mã dài; soạn nháp tài liệu tiếng Việt; hỗ trợ ghi biên bản trong lúc tôi tự chạy các ca kiểm thử tay |
+| **Claude / Antigravity** | bản hỗ trợ lập trình | Đọc và giải thích đoạn mã dài; soạn nháp tài liệu tiếng Việt; hỗ trợ viết script tự động hóa kịch bản kiểm thử API/Playwright và đo đạc số liệu hồ sơ |
 | **GitHub Copilot** | trong VS Code | Gợi ý hoàn thành dòng khi viết mã lặp lại (khai báo kiểu, mẫu try/catch, tên biến) |
 
 ### Việc tôi tự làm, không dùng AI thay
@@ -190,30 +201,28 @@ Tóm lại: AI giúp tôi **học nhanh hơn và viết tài liệu gọn hơn**
 | Chỉ số | Giá trị |
 |---|---|
 | Tệp mã nguồn và cấu hình | **167** |
-| Back-end | **4.307 dòng / 58 tệp** |
+| Back-end | **4.344 dòng / 58 tệp** |
 | Front-end | **6.269 dòng / 53 tệp** |
-| Tổng TypeScript | **10.576 dòng** |
+| Tổng TypeScript | **10.613 dòng** |
 | Kiểm thử | **2.175 dòng / 20 tệp** |
 | Phép khẳng định (backend `npm test`) | **357** |
 | Kiểm thử frontend (`vitest`) | 5 tệp / 20 test |
-| Kịch bản E2E (Playwright) | 6/6 đạt — đo ngày 08/09, **chưa chạy lại** sau đợt tối ưu 09/09 |
+| Kịch bản E2E (Playwright) | **6/6 đạt** — đã chạy lại ngày 10/09, đạt toàn bộ (8,5s) |
 | Endpoint API | 46 |
 | Bảng cơ sở dữ liệu | 11 |
 | Lỗ hổng `npm audit` (cả hai phía) | **0** |
 | Gói JavaScript lớn nhất sau build | 319,64 kB (gzip 101,54 kB) |
 | Slide bảo vệ | 18 slide |
 
-**Kết quả kiểm thử thủ công tới 09/09:** 8 ca PASS · 0 FAIL · 0 BLOCKED.
+**Kết quả kiểm thử tới 10/09:** 25 ca PASS · 0 FAIL · 0 BLOCKED · 3 lỗi thực tế đã xử lý triệt để (L01, L02, L03).
 
 ---
 
 ## 7. Việc còn lại
 
-- Chạy nốt các nhóm kiểm thử tay: giảng viên tạo nội dung (I01–I03), luồng học viên (S01–S04), quản trị (A01–A04), ma trận API bằng Postman, tính năng AI, và kiểm giao diện đáp ứng.
-- Chạy lại bộ E2E Playwright **sau khi xong toàn bộ kiểm thử tay** — bộ này ghi vào cơ sở dữ liệu và làm đổi ID, chạy giữa chừng sẽ hỏng bảng ID đang dùng.
-- Xuất lại bản PDF của slide cho khớp bộ 18 slide (bản PDF của báo cáo đã xuất lại ngày 09/09, 73 trang).
+- Xuất lại bản PDF của slide và báo cáo cho khớp số liệu 10.613 dòng (Bảng 1.6 Word và Slide 15 PowerPoint).
 - Báo cáo tại lớp **chiều 11/09/2026**; bảo vệ **trước 27/09/2026** vì cơ sở dữ liệu Render gói miễn phí hết hạn sau ngày đó.
 
 ---
 
-*Cập nhật lần cuối: 09/09/2026.*
+*Cập nhật lần cuối: 10/09/2026.*

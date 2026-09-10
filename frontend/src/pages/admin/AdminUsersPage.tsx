@@ -124,9 +124,9 @@ export default function AdminUsersPage() {
       {error && <Alert severity="error">{error}</Alert>}
 
       <Alert severity="info">
-        Khóa tài khoản sẽ thu hồi phiên đăng nhập ngay. Người dùng có thể còn thao tác được tối đa
-        15 phút nếu đang giữ access token chưa hết hạn — đây là đánh đổi có chủ đích của kiến trúc
-        JWT để không phải truy vấn cơ sở dữ liệu ở mọi request.
+        Khóa tài khoản thu hồi quyền truy cập ngay lập tức: mỗi request đều tra cứu trạng thái tài
+        khoản trực tiếp từ cơ sở dữ liệu, nên access token đang giữ (dù chưa hết hạn) cũng bị từ
+        chối ở request kế tiếp — không phải đợi hết 15 phút.
       </Alert>
 
       <Paper sx={{ p: 2 }}>

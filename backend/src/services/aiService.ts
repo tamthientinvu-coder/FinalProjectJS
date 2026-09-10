@@ -15,6 +15,20 @@ function trim(text: string | null | undefined, max = 6000): string {
   return value.length <= max ? value : `${value.slice(0, max)}…`;
 }
 
+/**
+ * Văn bản tự do từ Gemini (tóm tắt, giải thích) KHÔNG đi qua responseSchema
+ * như đường sinh câu hỏi, nên không có gì chặn một câu trả lời hỏng/đứt
+ * đoạn trước khi hiển thị cho người dùng - hoặc tệ hơn, bị lưu vĩnh viễn
+ * vào CSDL (trường hợp explain-answer). Chặn tối thiểu ở đây: một câu trả
+ * lời hợp lệ theo đúng yêu cầu prompt luôn là một cụm/câu nhiều từ, không
+ * phải một mảnh vài ký tự.
+ */
+function isPlausibleProse(text: string, minLength: number, minWords: number): boolean {
+  const value = text.trim();
+  if (value.length < minLength) return false;
+  return value.split(/\s+/).filter(Boolean).length >= minWords;
+}
+
 async function resolveLesson(lessonId: number, viewer: Viewer) {
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
@@ -212,7 +226,18 @@ CÂU HỎI: ${answer.question.text}
 HỌC VIÊN ĐÃ CHỌN: ${chosen ? chosen.text : "(bỏ trống, không chọn đáp án nào)"}
 ĐÁP ÁN ĐÚNG: ${correct?.text ?? "(không xác định)"}`;
 
-  const explanation = await generateText(prompt, { temperature: 0.3, maxOutputTokens: 512 });
+  // maxOutputTokens phải đủ rộng: với các bản Gemini có suy luận nội bộ
+  // (thinking), phần suy luận cũng trừ vào hạn mức này trước khi tới văn
+  // bản thật - đặt quá thấp (512) từng khiến câu trả lời bị cắt cụt giữa
+  // chừng dù còn hạn mức tưởng như dư dả.
+  const explanation = await generateText(prompt, { temperature: 0.3, maxOutputTokens: 2048 });
+
+  // Không cache một câu trả lời hỏng: một khi đã lưu vào CSDL thì mọi lần
+  // xem lại sau đều trả thẳng bản cache này, không còn cơ hội gọi lại AI.
+  if (!isPlausibleProse(explanation, 30, 8)) {
+    logger.warn({ submissionId, questionId, explanation }, "Gemini returned implausible explanation, not caching");
+    throw new AppError(502, "AI trả về nội dung không hợp lệ, vui lòng thử lại");
+  }
 
   await prisma.answer.update({
     where: { submissionId_questionId: { submissionId, questionId } },
@@ -254,13 +279,21 @@ NỘI DUNG:
 ${source}
 """`;
 
-  const summary = await generateText(prompt, { temperature: 0.3, maxOutputTokens: 512 });
+  const summary = await generateText(prompt, { temperature: 0.3, maxOutputTokens: 2048 });
 
-  // Chuẩn hóa về mảng để giao diện tự quyết định cách hiển thị
+  // Chuẩn hóa về mảng để giao diện tự quyết định cách hiển thị. Loại bỏ
+  // luôn những "gạch đầu dòng" chỉ còn lại một mảnh vỡ định dạng (ví dụ
+  // Gemini không xuống dòng đúng chỗ) - một ý tóm tắt thật sự luôn là một
+  // cụm nhiều từ, không phải một từ đơn lẻ.
   const bullets = summary
     .split("\n")
     .map((line) => line.replace(/^[-*•\s]+/, "").trim())
-    .filter(Boolean);
+    .filter((line) => isPlausibleProse(line, 10, 3));
+
+  if (bullets.length === 0) {
+    logger.warn({ lessonId, summary }, "Gemini returned unusable summary, no valid bullets");
+    throw new AppError(502, "AI trả về nội dung không hợp lệ, vui lòng thử lại");
+  }
 
   return {
     lesson: { id: lesson.id, title: lesson.title },
